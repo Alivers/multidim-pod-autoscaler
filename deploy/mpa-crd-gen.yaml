@@ -1,0 +1,204 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    api-approved.kubernetes.io: https://github.com/kubernetes/kubernetes/pull/63797
+    controller-gen.kubebuilder.io/version: v0.4.0
+  creationTimestamp: null
+  name: multidimpodautoscalers.autoscaling.k8s.io
+spec:
+  group: autoscaling.k8s.io
+  names:
+    kind: MultidimPodAutoscaler
+    listKind: MultidimPodAutoscalerList
+    plural: multidimpodautoscalers
+    shortNames:
+    - vpa
+    singular: multidimpodautoscaler
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: 伸缩器的状态信息 用于自动伸缩
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: 伸缩器的配置
+            properties:
+              resourcePolicy:
+                description: 伸缩算法中需要考虑的一些用户配置(资源上下限等) 未指定时，将默认算法应用到全部容器(计算伸缩方案)
+                properties:
+                  containerPolicies:
+                    description: 每个容器的资源策略
+                    items:
+                      description: 容器的资源策略配置(用户预配置)
+                      properties:
+                        containerName:
+                          description: 容器名('*' 通配表示全部)
+                          type: string
+                        expRespTime:
+                          description: 请求的预期响应时间
+                          type: integer
+                        maxAllowed:
+                          additionalProperties:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: 资源的上限限制(默认无限制)
+                          type: object
+                        minAllowed:
+                          additionalProperties:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: 资源的下限限制(默认无限制)
+                          type: object
+                        mode:
+                          description: 伸缩器是否要应用到该容器
+                          enum:
+                          - Auto
+                          - "Off"
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              targetRef:
+                description: TargetRef 指向管理POD集合来实现自动伸缩控制的控制器(deployment、statefulSet)
+                properties:
+                  apiVersion:
+                    description: API version of the referent
+                    type: string
+                  kind:
+                    description: 'Kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"'
+                    type: string
+                  name:
+                    description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              updatePolicy:
+                description: 针对POD如何改变(资源等)的策略描述 未指定则使用默认值
+                properties:
+                  updateMode:
+                    description: POD的更新策略 默认为 'Auto'.
+                    enum:
+                    - "Off"
+                    - Initial
+                    - Recreate
+                    - Auto
+                    type: string
+                type: object
+            required:
+            - targetRef
+            type: object
+          status:
+            description: 伸缩器的当前状态信息
+            properties:
+              conditions:
+                description: 伸缩器用于伸缩的条件(判断条件是否满足)
+                items:
+                  description: 伸缩器在某时刻的状态
+                  properties:
+                    lastTransitionTime:
+                      description: 上次状态改变的时间
+                      format: date-time
+                      type: string
+                    message:
+                      description: 可读的状态改变原因
+                      type: string
+                    reason:
+                      description: 上次状态改变的原因
+                      type: string
+                    status:
+                      description: 状态 (True, False, Unknown)
+                      type: string
+                    type:
+                      description: 状态描述
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              recommendationResource:
+                description: 最新的资源配置方案
+                properties:
+                  lowerBoundPodNum:
+                    type: integer
+                  lowerBoundResource:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 算法中间结果 保证方案不是最差选择(资源量下限)
+                    type: object
+                  targetPodNum:
+                    type: integer
+                  targetResource:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 伸缩算法得出的资源方案(每个Pod的资源量和Pod的个数)
+                    type: object
+                  uncappedTargetPodNum:
+                    type: integer
+                  uncappedTargetResource:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: Target是考虑了 ContainerResourcePolicy 的方案 UncappedTarget未考虑该限制(即无界)
+                      仅用于状态描述，不会实际应用
+                    type: object
+                  upperBoundPodNum:
+                    type: integer
+                  upperBoundResource:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 算法中间结果 保证方案不是最差选择(资源量上限)
+                    type: object
+                required:
+                - targetPodNum
+                - targetResource
+                type: object
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
