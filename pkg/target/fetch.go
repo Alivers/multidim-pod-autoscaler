@@ -58,18 +58,24 @@ const (
 // config - client配置；kubeClient - client；factory - 用于创建informer对象
 // 使用 sharedInformer (一个mpa上可能包含多个controller，每个控制器注册自己的回调，共享store)
 func NewMpaTargetSelectorFetcher(config *rest.Config, kubeClient kubeClient.Interface, factory informers.SharedInformerFactory) MpaTargetSelectorFetch {
+	// 用于获取 api-server 支持的资源组、版本、信息
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
 	if err != nil {
 		klog.Fatalf("Cannot create discovery client: %v", err)
 	}
 
+	// scale 子资源中资源和 (组, 版本, kind) 之间的对应关系
 	resolver := scale.NewDiscoveryScaleKindResolver(discoveryClient)
+	// base client 用于创建 scale 子资源
 	restClient := kubeClient.CoreV1().RESTClient()
+	// 带缓存的discoveryClient
 	cachedDiscoveryClient := cachedDiscovery.NewMemCacheClient(discoveryClient)
+	// 懒加载 rest mapper(将resource映射到kind)
 	mapper := restmapper.NewDeferredDiscoveryRESTMapper(cachedDiscoveryClient)
 
 	// channel 必须使用 make 构造
 	go wait.Until(func() {
+		// 重置缓存信息(会发出mapping请求，初始化/更新REST mapper)
 		mapper.Reset()
 	}, discoveryResetPeriod, make(chan struct{}))
 
@@ -85,8 +91,11 @@ func NewMpaTargetSelectorFetcher(config *rest.Config, kubeClient kubeClient.Inte
 	}
 
 	for kind, informer := range informersMap {
+		// 启动informer
 		stopChan := make(chan struct{})
 		go informer.Run(stopChan)
+		// 等待informer的cache被填充(只可能返回true/false)
+		// stopChan在这里不会被主动关闭
 		synced := cache.WaitForCacheSync(stopChan, informer.HasSynced)
 		if !synced {
 			klog.Fatalf("cannot sync cache for %s: %v", kind, err)
@@ -94,7 +103,7 @@ func NewMpaTargetSelectorFetcher(config *rest.Config, kubeClient kubeClient.Inte
 			klog.Infof("initial sync of %s completed", kind)
 		}
 	}
-
+	// 创建scale子资源接口(用于获取或更新某个namespace下定义了的scale子资源)
 	scaleNamespacer := scale.New(restClient, mapper, dynamic.LegacyAPIPathResolverFunc, resolver)
 	return &mpaTargetSelectorFetcher{
 		scaleNamespacer: scaleNamespacer,
@@ -211,6 +220,8 @@ func getLabelSelector(informer cache.SharedIndexInformer, kind, namespace, name 
 	return nil, fmt.Errorf("cannot find %s %s/%s", kind, namespace, name)
 }
 
+// getLabelSelectorFromResource 根据 groupKind 获取 namespace/name 对应的labelSelector
+// REST mapping 实现了 groupKind 到资源的映射
 func (fetch *mpaTargetSelectorFetcher) getLabelSelectorFromResource(groupKind schema.GroupKind, namespace, name string) (labels.Selector, error) {
 	mappings, err := fetch.mapper.RESTMappings(groupKind)
 	if err != nil {
