@@ -3,40 +3,37 @@ package target
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/scale"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/klog/v2"
-	"time"
-
 	appsV1 "k8s.io/api/apps/v1"
 	batchV1 "k8s.io/api/batch/v1"
 	batchV1Beta1 "k8s.io/api/batch/v1beta1"
 	coreV1 "k8s.io/api/core/v1"
-	cachedDiscovery "k8s.io/client-go/discovery/cached"
-	"k8s.io/client-go/restmapper"
-
-	mpaTypes "multidim-pod-autoscaler/pkg/apis/autoscaling/v1"
-
-	kubeClient "k8s.io/client-go/kubernetes"
-
 	apiMeta "k8s.io/apimachinery/pkg/api/meta"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/discovery"
+	cachedDiscovery "k8s.io/client-go/discovery/cached"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/informers"
+	kubeClient "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
+	"k8s.io/client-go/scale"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog/v2"
+	mpaTypes "multidim-pod-autoscaler/pkg/apis/autoscaling/v1"
+	"time"
 )
 
 const (
+	// discovery client 缓存重置的时间间隔
 	discoveryResetPeriod = 5 * time.Minute
 )
 
 // MpaTargetSelectorFetch 获取 labelSelector，用于选择被指定 MPA 控制的 PODs
 type MpaTargetSelectorFetch interface {
-	// 如果返回 error == nil, 则 selector 不是 nil
+	// Fetch 如果返回 error == nil, 则 selector 不是 nil
 	Fetch(mpa *mpaTypes.MultidimPodAutoscaler) (labels.Selector, error)
 }
 

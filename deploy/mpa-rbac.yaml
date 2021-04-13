@@ -1,0 +1,260 @@
+# cluster role definition of metrics(use for recommender)
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:metrics-reader
+rules:
+  - apiGroups:
+      - "metrics.k8s.io"
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:metrics-reader
+subjects:
+  - kind: ServiceAccount
+    name: mpa-recommender
+    namespace: kube-system
+# cluster role definition of mpa-actor
+# use for recommender and updater to update MPA Object etc.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:mpa-actor
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - nodes
+      - limitranges
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "autoscaling.k8s.io"
+    resources:
+      - multidimpodautoscalers
+    verbs:
+      - patch
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:mpa-actor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:mpa-actor
+subjects:
+  - kind: ServiceAccount
+    name: mpa-updater
+    namespace: kube-system
+  - kind: ServiceAccount
+    name: mpa-recommender
+    namespace: kube-system
+
+# cluster role: evictor for evivt pods
+# use for updater
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:evictor
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - replicasets
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - pods/eviction
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:evictor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:evictor
+subjects:
+  - kind: ServiceAccount
+    name: mpa-updater
+    namespace: kube-system
+# cluster role: admission for mpa admission control
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:mpa-admission
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - configmaps
+      - nodes
+      - limitranges
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "admissionregistration.k8s.io"
+    resources:
+      - mutatingwebhookconfigurations
+    verbs:
+      - create
+      - get
+      - list
+      - delete
+  - apiGroups:
+      - "autoscaling.k8s.io"
+    resources:
+      - multidimpodautoscalers
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "coordination.k8s.io"
+    resources:
+      - leases
+    verbs:
+      - create
+      - update
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:mpa-admission
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:mpa-admission
+subjects:
+  - kind: ServiceAccount
+    name: mpa-admission
+    namespace: kube-system
+# cluster role: status reader
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:mpa-status-reader
+rules:
+  - apiGroups:
+      - "coordination.k8s.io"
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:mpa-status-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:mpa-status-reader
+subjects:
+  - kind: ServiceAccount
+    name: mpa-updater
+    namespace: kube-system
+# cluster role: target reader(mpa target ref)
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:mpa-target-reader
+rules:
+  - apiGroups:
+      - '*'
+    resources:
+      - '*/scale'
+    verbs:
+      - get
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - replicationcontrollers
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - deployments
+      - replicasets
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+      - cronjobs
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:mpa-target-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:mpa-target-reader
+subjects:
+  - kind: ServiceAccount
+    name: mpa-recommender
+    namespace: kube-system
+  - kind: ServiceAccount
+    name: mpa-admission
+    namespace: kube-system
+  - kind: ServiceAccount
+    name: mpa-updater
+    namespace: kube-system
