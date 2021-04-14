@@ -117,7 +117,7 @@ type mpaTargetSelectorFetcher struct {
 	informersMap    map[wellKnownController]cache.SharedIndexInformer
 }
 
-// 实现 MpaTargetSelectorFetcher 接口
+// Fetch 实现 MpaTargetSelectorFetcher 接口
 func (fetch *mpaTargetSelectorFetcher) Fetch(mpa *mpaTypes.MultidimPodAutoscaler) (labels.Selector, error) {
 	if mpa.Spec.TargetRef == nil {
 		return nil, fmt.Errorf("targetRef undefined")

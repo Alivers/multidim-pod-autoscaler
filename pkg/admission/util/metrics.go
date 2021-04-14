@@ -95,6 +95,6 @@ func NewAdmissionLatencyTimer() *AdmissionLatencyTimer {
 }
 
 // Observe 测量从 AdmissionLatencyTimer 创建到 Now 的用时
-func (t AdmissionLatencyTimer) Observe(status AdmissionStatus, resource AdmissionResource) {
+func (t *AdmissionLatencyTimer) Observe(status AdmissionStatus, resource AdmissionResource) {
 	t.histo.WithLabelValues(string(status), string(resource)).Observe(time.Now().Sub(t.start).Seconds())
 }
