@@ -23,7 +23,7 @@ type MultidimPodAutoscalerList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:resource:shortName=vpa
 
-// 伸缩器的状态信息 用于自动伸缩
+// MultidimPodAutoscaler 保存伸缩器的基本信息 用于自动伸缩
 type MultidimPodAutoscaler struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
@@ -36,7 +36,7 @@ type MultidimPodAutoscaler struct {
 	Status MultidimPodAutoscalerStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
 }
 
-// 伸缩器的配置结构
+// MultidimPodAutoscalerSpec 保存MPA Obejct的配置
 type MultidimPodAutoscalerSpec struct {
 
 	// TargetRef 指向管理POD集合来实现自动伸缩控制的控制器(deployment、statefulSet)
@@ -53,7 +53,7 @@ type MultidimPodAutoscalerSpec struct {
 	ResourcePolicy *PodResourcePolicy `json:"resourcePolicy,omitempty" protobuf:"bytes,3,opt,name=resourcePolicy"`
 }
 
-// 针对POD如何改变(资源等)的策略描述
+// PodUpdatePolicy 描述如何改变POD(资源等)的策略
 type PodUpdatePolicy struct {
 	// POD的更新策略
 	// 默认为 'Auto'.
@@ -61,19 +61,19 @@ type PodUpdatePolicy struct {
 	UpdateMode *UpdateMode `json:"updateMode,omitempty" protobuf:"bytes,1,opt,name=updateMode"`
 }
 
-// 伸缩器针对POD的更新模式
+// UpdateMode MPA针对POD的更新模式
 // +kubebuilder:validation:Enum=Off;Initial;Recreate;Auto
 type UpdateMode string
 
 const (
-	// off模式下伸缩器不会尝试改变POD的资源
+	// UpdateModeOff 模式下伸缩器不会尝试改变POD的资源
 	// 此模式下伸缩算法还是会继续执行，但是方案不应用到POD
 	UpdateModeOff UpdateMode = "Off"
-	// auto模式下：创建POD 和 POD运行过程中 均应用方案(重建POD)
+	// UpdateModeAuto 模式下：创建POD 和 POD运行过程中 均应用方案(重建POD)
 	UpdateModeAuto UpdateMode = "Auto"
 )
 
-// P伸缩算法中需要考虑的一些用户配置(资源上下限等)
+// PodResourcePolicy 描述了伸缩算法中需要考虑的一些用户配置(资源上下限等)
 // 可使用 `containerName` = '*' 标识全部容器
 // 单个容器需要指定容器的唯一name
 type PodResourcePolicy struct {
@@ -84,7 +84,7 @@ type PodResourcePolicy struct {
 	ContainerPolicies []ContainerResourcePolicy `json:"containerPolicies,omitempty" patchStrategy:"merge" patchMergeKey:"containerName" protobuf:"bytes,1,rep,name=containerPolicies"`
 }
 
-// 容器的资源策略配置(用户预配置)
+// ContainerResourcePolicy 描述了容器的资源策略配置(用户预配置)
 type ContainerResourcePolicy struct {
 	// 容器名('*' 通配表示全部)
 	ContainerName string `json:"containerName,omitempty" protobuf:"bytes,1,opt,name=containerName"`
@@ -103,22 +103,22 @@ type ContainerResourcePolicy struct {
 }
 
 const (
-	// 默认容器资源策略为全部容器应用
+	// DefaultContainerResourcePolicy 表示默认容器资源策略为全部容器应用
 	DefaultContainerResourcePolicy = "*"
 )
 
-// 自动伸缩器是否应用到容器
+// ContainerScalingMode 自动伸缩器是否应用到容器
 // +kubebuilder:validation:Enum=Auto;Off
 type ContainerScalingMode string
 
 const (
-	// 应用到容器
+	// ContainerScalingModeAuto 应用到容器
 	ContainerScalingModeAuto ContainerScalingMode = "Auto"
-	// 不应用
+	// ContainerScalingModeOff 不应用
 	ContainerScalingModeOff ContainerScalingMode = "Off"
 )
 
-// 描述伸缩器的运行状态
+// MultidimPodAutoscalerStatus 描述伸缩器的运行状态
 type MultidimPodAutoscalerStatus struct {
 	// 最新的资源配置方案
 	// +optional
@@ -131,7 +131,7 @@ type MultidimPodAutoscalerStatus struct {
 	Conditions []MultidimPodAutoscalerCondition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,3,rep,name=conditions"`
 }
 
-// 伸缩器计算得出的伸缩方案
+// RecommendedResources 伸缩器计算得出的伸缩方案
 type RecommendedResources struct {
 	// 伸缩算法得出的资源方案(每个Pod的资源量和Pod的个数)
 	TargetResource v1.ResourceList `json:"targetResource" protobuf:"bytes,1,rep,name=targetResource,casttype=ResourceList,castkey=ResourceName"`
@@ -159,17 +159,17 @@ type RecommendedResources struct {
 	UncappedTargetPodNum int `json:"uncappedTargetPodNum" protobuf:"int32,2,opt,name=uncappedTargetPodNum"`
 }
 
-// 伸缩器的合法状态
+// MultidimPodAutoscalerConditionType 伸缩器的合法状态
 type MultidimPodAutoscalerConditionType string
 
 var (
-	// 伸缩器可以进行方案计算及推荐
+	// RecommendationProvided 伸缩器可以进行方案计算及推荐
 	RecommendationProvided MultidimPodAutoscalerConditionType = "RecommendationProvided"
-	// label selector未匹配到POD
+	// NoPodsMatched 表示 label selector未匹配到POD
 	NoPodsMatched MultidimPodAutoscalerConditionType = "NoPodsMatched"
 )
 
-// 伸缩器在某时刻的状态
+// MultidimPodAutoscalerCondition 伸缩器在某时刻的状态
 type MultidimPodAutoscalerCondition struct {
 	// 状态描述
 	Type MultidimPodAutoscalerConditionType `json:"type" protobuf:"bytes,1,name=type"`
