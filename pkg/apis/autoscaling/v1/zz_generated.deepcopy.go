@@ -48,6 +48,20 @@ func (in *ContainerResourcePolicy) DeepCopyInto(out *ContainerResourcePolicy) {
 			(*out)[key] = val.DeepCopy()
 		}
 	}
+	if in.ControlledMode != nil {
+		in, out := &in.ControlledMode, &out.ControlledMode
+		*out = new(ContainerControlledMode)
+		**out = **in
+	}
+	if in.ControlledResources != nil {
+		in, out := &in.ControlledResources, &out.ControlledResources
+		*out = new([]corev1.ResourceName)
+		if **in != nil {
+			in, out := *in, *out
+			*out = make([]corev1.ResourceName, len(*in))
+			copy(*out, *in)
+		}
+	}
 	return
 }
 

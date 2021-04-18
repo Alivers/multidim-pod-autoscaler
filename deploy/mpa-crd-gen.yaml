@@ -48,6 +48,19 @@ spec:
                         containerName:
                           description: 容器名('*' 通配表示全部)
                           type: string
+                        controlledMode:
+                          description: 容器的 request 和 limit 的控制方式 默认为 "RequestsAndLimits"
+                          enum:
+                          - RequestsAndLimits
+                          - RequestsOnly
+                          type: string
+                        controlledResources:
+                          description: 容器的资源的控制种类 默认为 [ResourceCPU, ResourceMemory]
+                          items:
+                            description: ResourceName is the name identifying various
+                              resources in a ResourceList.
+                            type: string
+                          type: array
                         expRespTime:
                           description: 请求的预期响应时间
                           type: integer
@@ -101,8 +114,6 @@ spec:
                     description: POD的更新策略 默认为 'Auto'.
                     enum:
                     - "Off"
-                    - Initial
-                    - Recreate
                     - Auto
                     type: string
                 type: object
