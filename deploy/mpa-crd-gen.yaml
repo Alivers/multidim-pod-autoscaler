@@ -20,7 +20,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: 伸缩器的状态信息 用于自动伸缩
+        description: MultidimPodAutoscaler 保存伸缩器的基本信息 用于自动伸缩
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -43,7 +43,7 @@ spec:
                   containerPolicies:
                     description: 每个容器的资源策略
                     items:
-                      description: 容器的资源策略配置(用户预配置)
+                      description: ContainerResourcePolicy 描述了容器的资源策略配置(用户预配置)
                       properties:
                         containerName:
                           description: 容器名('*' 通配表示全部)
@@ -115,7 +115,7 @@ spec:
               conditions:
                 description: 伸缩器用于伸缩的条件(判断条件是否满足)
                 items:
-                  description: 伸缩器在某时刻的状态
+                  description: MultidimPodAutoscalerCondition 伸缩器在某时刻的状态
                   properties:
                     lastTransitionTime:
                       description: 上次状态改变的时间
@@ -141,54 +141,63 @@ spec:
               recommendationResource:
                 description: 最新的资源配置方案
                 properties:
+                  containerRecommendations:
+                    items:
+                      description: RecommendedContainerResources 每个容器的推荐资源
+                      properties:
+                        containerName:
+                          description: 容器名
+                          type: string
+                        lowerBound:
+                          additionalProperties:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: 算法中间结果 保证方案不是最差选择(资源量上限)
+                          type: object
+                        target:
+                          additionalProperties:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: 推荐资源量
+                          type: object
+                        uncappedTarget:
+                          additionalProperties:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: Target是考虑了 ContainerResourcePolicy 的方案 UncappedTarget未考虑该限制(即无界)
+                            仅用于状态描述，不会实际应用
+                          type: object
+                        upperBound:
+                          additionalProperties:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: ResourceList is a set of (resource name, quantity)
+                            pairs.
+                          type: object
+                      required:
+                      - target
+                      type: object
+                    type: array
                   lowerBoundPodNum:
                     type: integer
-                  lowerBoundResource:
-                    additionalProperties:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                      x-kubernetes-int-or-string: true
-                    description: 算法中间结果 保证方案不是最差选择(资源量下限)
-                    type: object
                   targetPodNum:
                     type: integer
-                  targetResource:
-                    additionalProperties:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                      x-kubernetes-int-or-string: true
-                    description: 伸缩算法得出的资源方案(每个Pod的资源量和Pod的个数)
-                    type: object
                   uncappedTargetPodNum:
                     type: integer
-                  uncappedTargetResource:
-                    additionalProperties:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                      x-kubernetes-int-or-string: true
-                    description: Target是考虑了 ContainerResourcePolicy 的方案 UncappedTarget未考虑该限制(即无界)
-                      仅用于状态描述，不会实际应用
-                    type: object
                   upperBoundPodNum:
                     type: integer
-                  upperBoundResource:
-                    additionalProperties:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                      x-kubernetes-int-or-string: true
-                    description: 算法中间结果 保证方案不是最差选择(资源量上限)
-                    type: object
-                required:
-                - targetPodNum
-                - targetResource
                 type: object
             type: object
         required:
