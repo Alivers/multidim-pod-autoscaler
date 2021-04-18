@@ -62,7 +62,7 @@ type PodUpdatePolicy struct {
 }
 
 // UpdateMode MPA针对POD的更新模式
-// +kubebuilder:validation:Enum=Off;Initial;Recreate;Auto
+// +kubebuilder:validation:Enum=Off;Auto
 type UpdateMode string
 
 const (
@@ -71,6 +71,17 @@ const (
 	UpdateModeOff UpdateMode = "Off"
 	// UpdateModeAuto 模式下：创建POD 和 POD运行过程中 均应用方案(重建POD)
 	UpdateModeAuto UpdateMode = "Auto"
+)
+
+// ContainerControlledMode 描述容器的request和limit的控制方式
+// +kubebuilder:validation:Enum=RequestsAndLimits;RequestsOnly
+type ContainerControlledMode string
+
+const (
+	// ContainerControlledRequestsAndLimits 表示 request 和 limit 将会被按比例伸缩
+	ContainerControlledRequestsAndLimits ContainerControlledMode = "RequestsAndLimits"
+	// ContainerControlledRequestsOnly 表示 request 会被伸缩, limit 不会改变
+	ContainerControlledRequestsOnly ContainerControlledMode = "RequestsOnly"
 )
 
 // PodResourcePolicy 描述了伸缩算法中需要考虑的一些用户配置(资源上下限等)
@@ -100,6 +111,13 @@ type ContainerResourcePolicy struct {
 	// 请求的预期响应时间
 	// +optional
 	ExpRespTime int `json:"expRespTime,omitempty" protobuf:"int32,5,req,name=expRespTime"`
+	// 容器的 request 和 limit 的控制方式
+	// 默认为 "RequestsAndLimits"
+	// +optional
+	ControlledMode *ContainerControlledMode `json:"controlledMode,omitempty" protobuf:"bytes,6,rep,name=controlledMode"`
+	// 容器的资源的控制种类
+	// 默认为 [ResourceCPU, ResourceMemory]
+	ControlledResources *[]v1.ResourceName `json:"controlledResources,omitempty" patchStrategy:"merge" protobuf:"bytes,7,rep,name=controlledResources"`
 }
 
 const (

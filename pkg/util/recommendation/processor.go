@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	mpaTypes "multidim-pod-autoscaler/pkg/apis/autoscaling/v1"
 	limitrange "multidim-pod-autoscaler/pkg/util/limitrange"
+	mpaApi "multidim-pod-autoscaler/pkg/util/mpa"
 )
 
 // ContainerAnnotationsMap 为 容器名 到 容器的 annotations 的映射
@@ -55,9 +56,22 @@ func (p *processor) AdjustRecommendation(
 
 func adjustRecommendationForContainer(
 	container corev1.Container,
-	recommendation *mpaTypes.RecommendedResources,
-) {
+	recommendation *mpaTypes.RecommendedContainerResources,
+	podPolicy *mpaTypes.PodResourcePolicy,
+	limitRange *corev1.LimitRangeItem,
+) (*mpaTypes.RecommendedContainerResources, []string, error) {
+	if recommendation == nil {
+		return nil, nil, fmt.Errorf("no recommendation aviliable for container: %v", container.Name)
+	}
 
+	containerPolicy := mpaApi.GetContainerResourcePolicy(container.Name, podPolicy)
+	adjustedRecommendation := recommendation.DeepCopy()
+
+	adjustAnnotations := make([]string, 0)
+
+	process := func(recomm corev1.ResourceList, getAnnotations bool) {
+
+	}
 }
 
 // adjustAnnotation 返回一个 annotation 标记
