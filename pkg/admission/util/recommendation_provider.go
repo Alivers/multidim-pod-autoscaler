@@ -55,13 +55,13 @@ func (r *recommendationProvider) GetContainerResourcesForPod(
 		resourcePolicy = mpa.Spec.ResourcePolicy
 	}
 	// 获取 limit request 形式的资源(伸缩之后)
-	containerResources, annotations := getContainerResources(pod, resourcePolicy, mpa.Status.RecommendationResources, containerLimitRange)
+	containerResources, annotations := getContainersResources(pod, resourcePolicy, mpa.Status.RecommendationResources, containerLimitRange)
 
 	return containerResources, annotations, nil
 }
 
-// getContainerResources 获取容器的推荐资源
-func getContainerResources(
+// getContainersResources 获取容器的推荐资源
+func getContainersResources(
 	pod *corev1.Pod,
 	podPolicy *mpaTypes.PodResourcePolicy,
 	recommendation *mpaTypes.RecommendedResources,

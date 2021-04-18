@@ -10,10 +10,7 @@ import (
 
 // Resources 保存了容器的资源配额
 // 路径(.resources.limits .resources.requests)
-type Resources struct {
-	Limits   corev1.ResourceList
-	Requests corev1.ResourceList
-}
+type Resources corev1.ResourceRequirements
 
 type roundType int
 
