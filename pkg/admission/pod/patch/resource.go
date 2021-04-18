@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	// ResourceUpdatesAnnotation 为资源被 MPA 修改的标记名
 	ResourceUpdatesAnnotation = "MpaUpdates"
 )
 
