@@ -67,6 +67,7 @@ func GetMpaUpdateMode(mpa *mpaTypes.MultidimPodAutoscaler) mpaTypes.UpdateMode {
 }
 
 // GetContainerResourcePolicy 获取指定容器的资源策略
+// 返回值可能为 nil
 func GetContainerResourcePolicy(containerName string, podPolicy *mpaTypes.PodResourcePolicy) *mpaTypes.ContainerResourcePolicy {
 	var defaultPolicy *mpaTypes.ContainerResourcePolicy
 
@@ -83,6 +84,16 @@ func GetContainerResourcePolicy(containerName string, podPolicy *mpaTypes.PodRes
 		}
 	}
 	return defaultPolicy
+}
+
+// GetContainerControlledMode 获取容器 request limit 的控制方式
+// 默认为 request limit 同时控制(按比例伸缩)
+func GetContainerControlledMode(containerName string, podPolicy *mpaTypes.PodResourcePolicy) mpaTypes.ContainerControlledMode {
+	containerPolicy := GetContainerResourcePolicy(containerName, podPolicy)
+	if containerPolicy == nil || containerPolicy.ControlledMode == nil {
+		return mpaTypes.ContainerControlledRequestsAndLimits
+	}
+	return *containerPolicy.ControlledMode
 }
 
 // GetControllingMpaForPod 获取管理指定pod的mpa(with labelSelector)

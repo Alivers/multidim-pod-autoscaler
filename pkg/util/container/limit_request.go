@@ -32,7 +32,7 @@ func GetProportionalLimit(originalLimit, originalRequest,
 	defaultLimit corev1.ResourceList) (corev1.ResourceList, []string) {
 	annotations := make([]string, 0)
 	// 计算CPU recommended limit
-	cpuLimit, annotation := getProportionalResourceLimit(
+	cpuLimit, annotation := GetProportionalResourceLimit(
 		corev1.ResourceCPU,
 		originalLimit.Cpu(), originalRequest.Cpu(),
 		recommendedRequest.Cpu(), defaultLimit.Cpu(),
@@ -41,7 +41,7 @@ func GetProportionalLimit(originalLimit, originalRequest,
 		annotations = append(annotations, annotation)
 	}
 	// 计算memory recommended limit
-	memoryLimit, annotation := getProportionalResourceLimit(
+	memoryLimit, annotation := GetProportionalResourceLimit(
 		corev1.ResourceMemory,
 		originalLimit.Memory(), originalRequest.Memory(),
 		recommendedRequest.Memory(), defaultLimit.Memory(),
@@ -84,13 +84,13 @@ func GetBoundaryRequest(originalRequest, originalLimit, boundaryLimit, defaultLi
 	return result
 }
 
-// getProportionalResourceLimit 获取 originalLimit 缩放后的 Limit
+// GetProportionalResourceLimit 获取 originalLimit 缩放后的 Limit
 // 缩放比例为 recommednedRequest : originalRequest
 // 即缩放后保证:
 // recommendedLimit(返回值) : oringinalLimit == recommendedRequest : originalRequest
 // (需要处理一些边界情况)
-// 返回的字符串作为
-func getProportionalResourceLimit(resourceName corev1.ResourceName,
+// 返回的字符串作为溢出提示
+func GetProportionalResourceLimit(resourceName corev1.ResourceName,
 	originalLimit, originalRequest, recommendedRequest, defaultLimit *resource.Quantity) (*resource.Quantity, string) {
 	// 1. originalLimit 未设置且指定了 default limit时，originalLimit与 defaultLimit 相等
 	if (originalLimit == nil || originalLimit.Value() == 0) && defaultLimit != nil {

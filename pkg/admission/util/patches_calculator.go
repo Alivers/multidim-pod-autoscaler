@@ -6,7 +6,7 @@ import (
 	"multidim-pod-autoscaler/pkg/util/patch"
 )
 
-// Calculator 计算指定POD的patch
-type Calculator interface {
+// PatchCalculator 计算指定POD的patch
+type PatchCalculator interface {
 	CalculatePatches(pod *corev1.Pod, mpa *mpaTypes.MultidimPodAutoscaler) ([]patch.Patch, error)
 }

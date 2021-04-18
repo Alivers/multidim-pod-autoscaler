@@ -21,7 +21,7 @@ func (*observedPodPatchCalculator) CalculatePatches(pod *corev1.Pod, mpa *v1.Mul
 }
 
 // NewObservedPodPatchCalculator 返回一个新的observedPodPatchCalculator
-func NewObservedPodPatchCalculator() util.Calculator {
+func NewObservedPodPatchCalculator() util.PatchCalculator {
 	return &observedPodPatchCalculator{}
 }
 
