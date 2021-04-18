@@ -44,11 +44,11 @@ func configTLS(clientset *kubernetes.Clientset, serverCert, serverKey []byte) *t
 // webhookRegistration向 api-server 注册 admission控制器的webhook配置
 func webhookRegistration(clientset *kubernetes.Clientset, caCert []byte, namespace, serviceName, url string, registerByURL bool, timeoutSeconds int32) {
 	time.Sleep(10 * time.Second)
-	client := clientset.AdmissionregistrationV1().MutatingWebhookConfigurations()
-	_, err := client.Get(context.TODO(), webhookConfigName, metav1.GetOptions{})
+	webhookClient := clientset.AdmissionregistrationV1().MutatingWebhookConfigurations()
+	_, err := webhookClient.Get(context.TODO(), webhookConfigName, metav1.GetOptions{})
 	if err == nil {
 		// 同名webhook已经被配置，先删除后继续配置
-		if err2 := client.Delete(context.TODO(), webhookConfigName, metav1.DeleteOptions{}); err2 != nil {
+		if err2 := webhookClient.Delete(context.TODO(), webhookConfigName, metav1.DeleteOptions{}); err2 != nil {
 			klog.Fatal(err2)
 		}
 	}
@@ -104,7 +104,7 @@ func webhookRegistration(clientset *kubernetes.Clientset, caCert []byte, namespa
 			},
 		},
 	}
-	if _, err := client.Create(context.TODO(), webhookConfig, metav1.CreateOptions{}); err != nil {
+	if _, err := webhookClient.Create(context.TODO(), webhookConfig, metav1.CreateOptions{}); err != nil {
 		klog.Fatal(err)
 	} else {
 		klog.V(3).Info("Webhook registration as MutatingWebhook succeeded.")

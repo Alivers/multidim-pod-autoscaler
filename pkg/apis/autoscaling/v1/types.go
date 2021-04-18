@@ -133,30 +133,34 @@ type MultidimPodAutoscalerStatus struct {
 
 // RecommendedResources 伸缩器计算得出的伸缩方案
 type RecommendedResources struct {
-	// 伸缩算法得出的资源方案(每个Pod的资源量和Pod的个数)
-	TargetResource v1.ResourceList `json:"targetResource" protobuf:"bytes,1,rep,name=targetResource,casttype=ResourceList,castkey=ResourceName"`
-
-	TargetPodNum int `json:"targetPodNum" protobuf:"int32,2,opt,name=targetPodNum"`
-
-	// 算法中间结果 保证方案不是最差选择(资源量下限)
 	// +optional
-	LowerBoundResource v1.ResourceList `json:"lowerBoundResource" protobuf:"bytes,1,rep,name=lowerBoundResource,casttype=ResourceList,castkey=ResourceName"`
+	TargetPodNum int `json:"targetPodNum" protobuf:"int32,1,opt,name=targetPodNum"`
 	// +optional
 	LowerBoundPodNum int `json:"lowerBoundPodNum" protobuf:"int32,2,opt,name=lowerBoundPodNum"`
+	// +optional
+	UpperBoundPodNum int `json:"upperBoundPodNum" protobuf:"int32,3,opt,name=upperBoundPodNum"`
+	// +optional
+	UncappedTargetPodNum int `json:"uncappedTargetPodNum" protobuf:"int32,4,opt,name=uncappedTargetPodNum"`
+	// +optional
+	ContainerRecommendations []RecommendedContainerResources `json:"containerRecommendations,omitempty" protobuf:"bytes,5,rep,name=containerRecommendations"`
+}
 
+// RecommendedContainerResources 每个容器的推荐资源
+type RecommendedContainerResources struct {
+	// 容器名
+	ContainerName string `json:"containerName,omitempty" protobuf:"bytes,1,opt,name=containerName"`
+	// 推荐资源量
+	Target v1.ResourceList `json:"target" protobuf:"bytes,2,rep,name=target,casttype=ResourceList,castkey=ResourceName"`
 	// 算法中间结果 保证方案不是最差选择(资源量上限)
 	// +optional
-	UpperBoundResource v1.ResourceList `json:"upperBoundResource" protobuf:"bytes,1,rep,name=upperBoundResource,casttype=ResourceList,castkey=ResourceName"`
+	LowerBound v1.ResourceList `json:"lowerBound,omitempty" protobuf:"bytes,3,rep,name=lowerBound,casttype=ResourceList,castkey=ResourceName"`
 	// +optional
-	UpperBoundPodNum int `json:"upperBoundPodNum" protobuf:"int32,2,opt,name=upperBoundPodNum"`
-
+	UpperBound v1.ResourceList `json:"upperBound,omitempty" protobuf:"bytes,4,rep,name=upperBound,casttype=ResourceList,castkey=ResourceName"`
 	// Target是考虑了 ContainerResourcePolicy 的方案
 	// UncappedTarget未考虑该限制(即无界)
 	// 仅用于状态描述，不会实际应用
 	// +optional
-	UncappedTargetResource v1.ResourceList `json:"uncappedTargetResource" protobuf:"bytes,1,rep,name=uncappedTargetResource,casttype=ResourceList,castkey=ResourceName"`
-	// +optional
-	UncappedTargetPodNum int `json:"uncappedTargetPodNum" protobuf:"int32,2,opt,name=uncappedTargetPodNum"`
+	UncappedTarget v1.ResourceList `json:"uncappedTarget,omitempty" protobuf:"bytes,5,opt,name=uncappedTarget"`
 }
 
 // MultidimPodAutoscalerConditionType 伸缩器的合法状态

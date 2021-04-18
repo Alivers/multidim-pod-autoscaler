@@ -35,8 +35,8 @@ func CreateExecutionTimeMetric(namespace, help string) *prometheus.HistogramVec 
 }
 
 const (
-	// MetricsNamespace 为MPA组件的 metrics 命名空间前缀(用于prometheus)
-	MetricsNamespace string = "mpa_"
+	// TopNamespace 为MPA组件的 metrics 命名空间前缀(用于prometheus)
+	TopNamespace string = "mpa_"
 )
 
 // ExecutionTimer 用于测量 某个步骤 的执行时间
