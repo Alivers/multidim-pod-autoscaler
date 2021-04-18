@@ -4,16 +4,17 @@ package util
 
 import (
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
 	"multidim-pod-autoscaler/pkg/util/metrics"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
 	// metricsNamespace admission metrics的namespace
 	// 用于 prometheus metrics
 	// 本包私有，不向外暴露
-	metricsNamespace string = metrics.MetricsNamespace + "admission"
+	metricsNamespace string = metrics.TopNamespace + "admission"
 )
 
 // AdmissionStatus 表示admission的状态(webhook回调处理过程中的状态)
