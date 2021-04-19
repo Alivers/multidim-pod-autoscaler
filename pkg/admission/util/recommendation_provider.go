@@ -44,10 +44,13 @@ func (r *recommendationProvider) GetContainerResourcesForPod(
 		klog.V(2).Infof("connot get recommendations, MPA(%v) or Pod(%v) is nil", mpa, pod)
 		return nil, nil, nil
 	}
-
-	containerLimitRange, err := r.limitRange.GetContainerLimitRangeItem(pod.Namespace)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error getting container LimitRange: %s", err)
+	var containerLimitRange *corev1.LimitRangeItem
+	var err error
+	if r.limitRange != nil {
+		containerLimitRange, err = r.limitRange.GetContainerLimitRangeItem(pod.Namespace)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error getting container LimitRange: %s", err)
+		}
 	}
 
 	var resourcePolicy *mpaTypes.PodResourcePolicy
