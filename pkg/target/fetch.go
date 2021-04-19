@@ -37,18 +37,18 @@ type MpaTargetSelectorFetch interface {
 	Fetch(mpa *mpaTypes.MultidimPodAutoscaler) (labels.Selector, error)
 }
 
-// 枚举常量类型定义
-type wellKnownController string
+// WellKnownController 常见控制器枚举 枚举常量类型定义
+type WellKnownController string
 
 // 常见控制器枚举
 const (
-	daemonSet             wellKnownController = "DaemonSet"
-	deployment            wellKnownController = "Deployment"
-	replicaSet            wellKnownController = "ReplicaSet"
-	statefulSet           wellKnownController = "StatefulSet"
-	replicationController wellKnownController = "ReplicationController"
-	job                   wellKnownController = "Job"
-	cronJob               wellKnownController = "CronJob"
+	DaemonSet             WellKnownController = "DaemonSet"
+	Deployment            WellKnownController = "Deployment"
+	ReplicaSet            WellKnownController = "ReplicaSet"
+	StatefulSet           WellKnownController = "StatefulSet"
+	ReplicationController WellKnownController = "ReplicationController"
+	Job                   WellKnownController = "Job"
+	CronJob               WellKnownController = "CronJob"
 )
 
 // NewMpaTargetSelectorFetcher 返回 MpaTargetSelectorFetcher 接口，来获指定 mpa 的label选择器
@@ -77,14 +77,14 @@ func NewMpaTargetSelectorFetcher(config *rest.Config, kubeClient kubeClient.Inte
 	}, discoveryResetPeriod, make(chan struct{}))
 
 	// 构造 informers map, informer 使用 factory 工厂创建
-	informersMap := map[wellKnownController]cache.SharedIndexInformer{
-		daemonSet:             factory.Apps().V1().DaemonSets().Informer(),
-		deployment:            factory.Apps().V1().Deployments().Informer(),
-		replicaSet:            factory.Apps().V1().ReplicaSets().Informer(),
-		statefulSet:           factory.Apps().V1().StatefulSets().Informer(),
-		replicationController: factory.Core().V1().ReplicationControllers().Informer(),
-		job:                   factory.Batch().V1().Jobs().Informer(),
-		cronJob:               factory.Batch().V1beta1().CronJobs().Informer(),
+	informersMap := map[WellKnownController]cache.SharedIndexInformer{
+		DaemonSet:             factory.Apps().V1().DaemonSets().Informer(),
+		Deployment:            factory.Apps().V1().Deployments().Informer(),
+		ReplicaSet:            factory.Apps().V1().ReplicaSets().Informer(),
+		StatefulSet:           factory.Apps().V1().StatefulSets().Informer(),
+		ReplicationController: factory.Core().V1().ReplicationControllers().Informer(),
+		Job:                   factory.Batch().V1().Jobs().Informer(),
+		CronJob:               factory.Batch().V1beta1().CronJobs().Informer(),
 	}
 
 	for kind, informer := range informersMap {
@@ -114,7 +114,7 @@ func NewMpaTargetSelectorFetcher(config *rest.Config, kubeClient kubeClient.Inte
 type mpaTargetSelectorFetcher struct {
 	scaleNamespacer scale.ScalesGetter
 	mapper          apiMeta.RESTMapper
-	informersMap    map[wellKnownController]cache.SharedIndexInformer
+	informersMap    map[WellKnownController]cache.SharedIndexInformer
 }
 
 // Fetch 实现 MpaTargetSelectorFetcher 接口
@@ -123,7 +123,7 @@ func (fetch *mpaTargetSelectorFetcher) Fetch(mpa *mpaTypes.MultidimPodAutoscaler
 		return nil, fmt.Errorf("targetRef undefined")
 	}
 
-	kind := wellKnownController(mpa.Spec.TargetRef.Kind)
+	kind := WellKnownController(mpa.Spec.TargetRef.Kind)
 
 	informer, existed := fetch.informersMap[kind]
 
