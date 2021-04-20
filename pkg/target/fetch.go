@@ -49,6 +49,7 @@ const (
 	ReplicationController WellKnownController = "ReplicationController"
 	Job                   WellKnownController = "Job"
 	CronJob               WellKnownController = "CronJob"
+	Node                  WellKnownController = "Node"
 )
 
 // NewMpaTargetSelectorFetcher 返回 MpaTargetSelectorFetcher 接口，来获指定 mpa 的label选择器
