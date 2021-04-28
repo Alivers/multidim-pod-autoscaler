@@ -39,7 +39,18 @@ type customClient struct {
 	client custom_metrics.CustomMetricsClient
 }
 
-func (c *customClient) GetPodRawMetric(metricName string, namespace string, selector labels.Selector, metricSelector labels.Selector) (PodMetricsInfo, time.Time, error) {
+func NewClient(cmClient custom_metrics.CustomMetricsClient) Client {
+	return &customClient{
+		client: cmClient,
+	}
+}
+
+func (c *customClient) GetPodRawMetric(
+	metricName string,
+	namespace string,
+	selector labels.Selector,
+	metricSelector labels.Selector,
+) (PodMetricsInfo, time.Time, error) {
 	metrics, err := c.client.NamespacedMetrics(namespace).GetForObjects(schema.GroupKind{Kind: "Pod"}, selector, metricName, metricSelector)
 	if err != nil {
 		return nil, time.Time{}, fmt.Errorf("unable to fetch metrics from custom metrics API: %v", err)

@@ -77,7 +77,11 @@ func (p *processor) AdjustRecommendation(
 			continue
 		}
 		// 获取容器的 limit range
-		containerLimitRange, err := p.limitRangeCalculator.GetContainerLimitRangeItem(pod.Namespace)
+		var containerLimitRange *corev1.LimitRangeItem
+		var err error
+		if p.limitRangeCalculator != nil {
+			containerLimitRange, err = p.limitRangeCalculator.GetContainerLimitRangeItem(pod.Namespace)
+		}
 		if err != nil {
 			klog.Warningf("failed to fetch limit range for %v namespace", pod.Namespace)
 		}
