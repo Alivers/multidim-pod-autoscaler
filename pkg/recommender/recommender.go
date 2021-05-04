@@ -3,6 +3,7 @@ package recommender
 import (
 	"context"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	kubeClient "k8s.io/client-go/kubernetes"
 	coreListers "k8s.io/client-go/listers/core/v1"
@@ -22,6 +23,8 @@ type Recommender interface {
 }
 
 type recommender struct {
+	kubeclientset            kubeClient.Interface
+	mpaclientset             mpaClientset.Interface
 	mpaLister                mpaListers.MultidimPodAutoscalerLister
 	podLister                coreListers.PodLister
 	mpaTargetSelectorFetcher target.MpaTargetSelectorFetch
@@ -31,12 +34,14 @@ type recommender struct {
 
 func NewRecommender(
 	kubeclient kubeClient.Interface,
-	mpaclient *mpaClientset.Clientset,
+	mpaclient mpaClientset.Interface,
 	mpaTargetSelectorFetcher target.MpaTargetSelectorFetch,
 	recommendationCalculator recommendation.Calculator,
 	recommendationProcessor recommendationUtil.Processor,
 	namespace string) (Recommender, error) {
 	return &recommender{
+		kubeclientset:            kubeclient,
+		mpaclientset:             mpaclient,
 		mpaLister:                utilMpa.NewMpasLister(mpaclient, namespace, make(chan struct{})),
 		podLister:                utilPod.NewPodLister(kubeclient, namespace, make(chan struct{})),
 		mpaTargetSelectorFetcher: mpaTargetSelectorFetcher,
@@ -83,39 +88,70 @@ func (r *recommender) MainProcedure(ctx context.Context) {
 	// 过滤杯驱逐(待删除)的pod
 	livingPods := filterDeletedPods(podList)
 	// 匹配每个mpa控制的pods
-	mpaControlledPods := make(map[*mpaTypes.MultidimPodAutoscaler][]*corev1.Pod)
+	mpaControlledPods := make(map[*utilMpa.MpaWithSelector][]*corev1.Pod)
 	for _, pod := range livingPods {
 		controllingMpa := utilMpa.GetControllingMpaForPod(pod, mpas)
 		if controllingMpa != nil {
-			mpaControlledPods[controllingMpa.Mpa] = append(mpaControlledPods[controllingMpa.Mpa], pod)
+			mpaControlledPods[controllingMpa] = append(mpaControlledPods[controllingMpa], pod)
 		}
 	}
 
-	for mpa, pods := range mpaControlledPods {
+	for mpaWithSelector, pods := range mpaControlledPods {
 		if len(pods) <= 0 {
-			klog.Infof("MPA(%s/%s) has not controlled any pods", mpa.Namespace, mpa.Name)
+			klog.Infof("MPA(%s/%s) has not controlled any pods", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Mpa.Name)
 			continue
 		}
-		recommendationRes := r.recommendationCalculator.Calculate(mpa, pods)
-		adjustRecommendation, _, err :=
-			r.recommendationProcessor.AdjustRecommendation(recommendationRes, mpa.Spec.ResourcePolicy, pods[0])
-		if err != nil {
-			klog.Errorf("failed to adjust the recommendation resources of MPA(%s/%s): err", mpa.Namespace, mpa.Name)
-			continue
+		// 计算推荐方案
+		recommendationRes, action := r.recommendationCalculator.Calculate(mpaWithSelector, pods)
+
+		var adjustRecommendation *mpaTypes.RecommendedResources
+		var newCondition mpaTypes.MultidimPodAutoscalerCondition
+		if action == recommendation.ApplyRecommendation {
+			// 调整推荐方案
+			adjustRecommendation, _, err =
+				r.recommendationProcessor.AdjustRecommendation(recommendationRes, mpaWithSelector.Mpa.Spec.ResourcePolicy, pods[0])
+			if err != nil {
+				klog.Errorf("failed to adjust the recommendation resources of MPA(%s/%s): %v", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Mpa.Name, err)
+				continue
+			}
+			newCondition.Status = corev1.ConditionTrue
+			newCondition.LastTransitionTime = metav1.Now()
+			newCondition.Type = mpaTypes.RecommendationProvided
+			newCondition.Reason = "Recommendation Provided"
+		} else if action == recommendation.SkipRecommendation {
+			newCondition.Status = corev1.ConditionTrue
+			newCondition.LastTransitionTime = metav1.Now()
+			newCondition.Type = mpaTypes.RecommendationSkipped
+			newCondition.Reason = "Recommendation Skipped"
+		} else {
+			newCondition.Status = corev1.ConditionTrue
+			newCondition.LastTransitionTime = metav1.Now()
+			newCondition.Type = mpaTypes.RecommendationSkipped
+			newCondition.Reason = "Recommendation Unknown"
 		}
-		_, err = updateRecommendationIfBetter(adjustRecommendation, mpa.Status.RecommendationResources, mpa)
+
+		// 如果必要，更新推荐方案
+		_, err = r.updateRecommendationIfBetter(adjustRecommendation, newCondition, mpaWithSelector.Mpa)
 		if err != nil {
-			klog.Errorf("failed to update the recommendation resources for MPA(%s/%s): err", mpa.Namespace, mpa.Name)
+			klog.Errorf("failed to update the recommendation resources for MPA(%s/%s): %v", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Mpa.Name, err)
 		}
 	}
 }
 
-func updateRecommendationIfBetter(
+// updateRecommendationIfBetter 更新mpa对象的资源推荐方案
+func (r *recommender) updateRecommendationIfBetter(
 	newRecommendation *mpaTypes.RecommendedResources,
-	oldRecomendation *mpaTypes.RecommendedResources,
+	newStatusCondition mpaTypes.MultidimPodAutoscalerCondition,
 	mpa *mpaTypes.MultidimPodAutoscaler) (bool, error) {
+	mpaCopy := mpa.DeepCopy()
+	if newRecommendation != nil {
+		mpaCopy.Status.RecommendationResources = newRecommendation.DeepCopy()
+	}
+	mpaCopy.Status.Conditions = append(mpaCopy.Status.Conditions, newStatusCondition)
 
-	return true, nil
+	_, err :=
+		r.mpaclientset.AutoscalingV1().MultidimPodAutoscalers(mpa.Namespace).Update(context.TODO(), mpaCopy, metav1.UpdateOptions{})
+	return true, err
 }
 
 // filterDeletedPods 过滤已被删除的pods

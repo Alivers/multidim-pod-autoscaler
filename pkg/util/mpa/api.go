@@ -27,7 +27,7 @@ type MpaWithSelector struct {
 
 // NewMpasLister 返回 MPA lister(获取指定命名空间下的所有MPA Object)
 func NewMpasLister(
-	mpaClient *clientset.Clientset,
+	mpaClient clientset.Interface,
 	namespace string,
 	stopChan <-chan struct{}) lister.MultidimPodAutoscalerLister {
 	// 创建 lister(全量资源) watcher(资源增量) 来获取资源信息
@@ -98,12 +98,9 @@ func GetContainerControlledMode(containerName string, podPolicy *mpaTypes.PodRes
 
 // GetControllingMpaForPod 获取管理指定pod的mpa(with labelSelector)
 func GetControllingMpaForPod(pod *corev1.Pod, mpas []*MpaWithSelector) *MpaWithSelector {
-	var controlling = &MpaWithSelector{
-		Mpa:      nil,
-		Selector: nil,
-	}
+	var controlling *MpaWithSelector
 	for _, mpa := range mpas {
-		if PodMatchesMpa(pod, mpa) && strongerMpa(mpa.Mpa, controlling.Mpa) {
+		if PodMatchesMpa(pod, mpa) && (controlling == nil || strongerMpa(mpa.Mpa, controlling.Mpa)) {
 			controlling = mpa
 		}
 	}

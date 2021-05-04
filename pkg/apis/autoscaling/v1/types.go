@@ -187,6 +187,8 @@ type MultidimPodAutoscalerConditionType string
 var (
 	// RecommendationProvided 伸缩器可以进行方案计算及推荐
 	RecommendationProvided MultidimPodAutoscalerConditionType = "RecommendationProvided"
+	// RecommendationSkipped 表示本次的推荐方案被忽略，不能应用到pod
+	RecommendationSkipped MultidimPodAutoscalerConditionType = "RecommendationSkipped"
 	// NoPodsMatched 表示 label selector未匹配到POD
 	NoPodsMatched MultidimPodAutoscalerConditionType = "NoPodsMatched"
 )

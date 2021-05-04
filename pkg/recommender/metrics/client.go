@@ -27,12 +27,17 @@ type PodMetric struct {
 }
 
 // PodMetricsInfo 为 pod - 其Metrics信息的映射
-type PodMetricsInfo map[recommenderUtil.PodId][]PodMetric
+type PodMetricsInfo map[recommenderUtil.PodId]PodMetric
 
 // Client 提供了获取自定义pod metrics指标(如：qps等)的接口
 type Client interface {
 	// GetPodRawMetric 获取namespace下匹配selector的所有pod的metricsName对应的metrics信息
-	GetPodRawMetric(metricName string, namespace string, selector labels.Selector, metricSelector labels.Selector) (PodMetricsInfo, time.Time, error)
+	GetPodRawMetric(
+		metricName string,
+		namespace string,
+		selector labels.Selector,
+		metricSelector labels.Selector,
+	) (PodMetricsInfo, time.Time, error)
 }
 
 type customClient struct {
@@ -70,13 +75,11 @@ func (c *customClient) GetPodRawMetric(
 			Namespace: m.DescribedObject.Namespace,
 			Name:      m.DescribedObject.Name,
 		}
-		res[podId] = []PodMetric{
-			{
-				Name:      metricName,
-				Timestamp: m.Timestamp.Time,
-				Window:    window,
-				Value:     m.Value,
-			},
+		res[podId] = PodMetric{
+			Name:      metricName,
+			Timestamp: m.Timestamp.Time,
+			Window:    window,
+			Value:     m.Value,
 		}
 	}
 

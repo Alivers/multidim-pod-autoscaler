@@ -13,7 +13,6 @@ import (
 	"multidim-pod-autoscaler/pkg/recommender/recommendation"
 	recommenderUtil "multidim-pod-autoscaler/pkg/recommender/util"
 	"multidim-pod-autoscaler/pkg/target"
-	updaterUtil "multidim-pod-autoscaler/pkg/updater/util"
 	"multidim-pod-autoscaler/pkg/util"
 	"multidim-pod-autoscaler/pkg/util/limitrange"
 	"multidim-pod-autoscaler/pkg/util/metrics"
@@ -45,7 +44,7 @@ func main() {
 	klog.V(1).Infof("Multidim Pod Autoscaler %s Recommender", utilMpa.MultidimPodAutoscalerVersion)
 
 	metrics.InitializeMetrics(*prometheusAddress)
-	updaterUtil.RegisterMetrics()
+	recommenderMetrics.RegisterMetrics()
 
 	config := util.CreateKubeConfig(*kubeconfig, float32(*kubeApiQps), *kubeApiBurst)
 	kubeclient := kubeClient.NewForConfigOrDie(config)
@@ -71,7 +70,7 @@ func main() {
 		*mpaObjectNamespace,
 	)
 	if err != nil {
-		klog.Fatalf("failed to create MPA updater: %v", err)
+		klog.Fatalf("failed to create MPA recommender: %v", err)
 	}
 	ticker := time.Tick(*recommenderInterval)
 	for range ticker {

@@ -38,7 +38,7 @@ type updater struct {
 }
 
 func NewUpdater(
-	kubeclient kubeClient.Interface, mpaClient *mpaClientset.Clientset,
+	kubeclient kubeClient.Interface, mpaClient mpaClientset.Interface,
 	minReplicasToUpdate int, evictionFraction float64,
 	mpaTargetSelectorFetcher target.MpaTargetSelectorFetch,
 	evictionPriorityProcessor priority.Processor,
