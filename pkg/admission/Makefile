@@ -1,6 +1,6 @@
 all: build
 
-TAG?=dev
+TAG?=latest
 REGISTRY?=aliverjon
 FLAGS=
 TEST_ENVVAR=LD_FLAGS=-s GO111MODULE=on

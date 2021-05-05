@@ -61,6 +61,7 @@ rules:
       - get
       - list
       - watch
+      - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -92,6 +93,7 @@ rules:
       - replicasets
     verbs:
       - get
+      - update
   - apiGroups:
       - ""
     resources:
@@ -202,7 +204,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: system:mpa-target-reader
+  name: system:mpa-target-getter
 rules:
   - apiGroups:
       - '*'
@@ -211,6 +213,7 @@ rules:
     verbs:
       - get
       - watch
+      - update
   - apiGroups:
       - ""
     resources:
@@ -219,6 +222,7 @@ rules:
       - get
       - list
       - watch
+      - update
   - apiGroups:
       - apps
     resources:
@@ -230,6 +234,7 @@ rules:
       - get
       - list
       - watch
+      - update
   - apiGroups:
       - batch
     resources:
@@ -239,15 +244,16 @@ rules:
       - get
       - list
       - watch
+      - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: system:mpa-target-reader
+  name: system:mpa-target-getter
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: system:mpa-target-reader
+  name: system:mpa-target-getter
 subjects:
   - kind: ServiceAccount
     name: mpa-recommender
