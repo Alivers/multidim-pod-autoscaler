@@ -55,9 +55,13 @@ func main() {
 	factory := informers.NewSharedInformerFactory(kubeclient, defaultResyncPeriod)
 	targetSelectorFetcher := target.NewMpaTargetSelectorFetcher(config, kubeclient, factory)
 
+	mapper, scaleNamespacer := updaterUtil.NewMapperAndScaleGetter(config, kubeclient)
+
 	updater, err := NewUpdater(
 		kubeclient,
 		mpaClient,
+		scaleNamespacer,
+		mapper,
 		*minReplicasToUpdate,
 		*evictionFraction,
 		targetSelectorFetcher,

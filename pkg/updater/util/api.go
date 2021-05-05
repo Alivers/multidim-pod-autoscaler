@@ -4,12 +4,20 @@ import (
 	"fmt"
 	appsV1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/discovery"
+	cachedDiscovery "k8s.io/client-go/discovery/cached"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/informers"
 	kubeClient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	clientv1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
+	"k8s.io/client-go/scale"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog"
@@ -133,4 +141,30 @@ func GetPodId(pod *corev1.Pod) string {
 		return ""
 	}
 	return pod.Namespace + "/" + pod.Name
+}
+
+func NewMapperAndScaleGetter(config *rest.Config, kubeclientset kubeClient.Interface) (meta.RESTMapper, scale.ScalesGetter) {
+	// 用于获取 api-server 支持的资源组、版本、信息
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		klog.Fatalf("Cannot create discovery client: %v", err)
+	}
+
+	restClient := kubeclientset.CoreV1().RESTClient()
+
+	// scale 子资源中资源和 (组, 版本, kind) 之间的对应关系
+	resolver := scale.NewDiscoveryScaleKindResolver(discoveryClient)
+	// 带缓存的discoveryClient
+	cachedDiscoveryClient := cachedDiscovery.NewMemCacheClient(discoveryClient)
+	// 懒加载 rest mapper(将resource映射到kind)
+	mapper := restmapper.NewDeferredDiscoveryRESTMapper(cachedDiscoveryClient)
+
+	go wait.Until(func() {
+		// 重置缓存信息(会发出mapping请求，初始化/更新REST mapper)
+		mapper.Reset()
+	}, 30*time.Second, make(chan struct{}))
+
+	scaleNamespacer := scale.New(restClient, mapper, dynamic.LegacyAPIPathResolverFunc, resolver)
+
+	return mapper, scaleNamespacer
 }

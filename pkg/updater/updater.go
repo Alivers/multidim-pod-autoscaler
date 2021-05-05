@@ -3,10 +3,15 @@ package updater
 import (
 	"context"
 	"fmt"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	kubeClient "k8s.io/client-go/kubernetes"
 	clientListers "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/scale"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog"
 	mpaTypes "multidim-pod-autoscaler/pkg/apis/autoscaling/v1"
@@ -29,6 +34,10 @@ type Updater interface {
 
 // updater 实现 Updater 接口
 type updater struct {
+	kubeclientset             kubeClient.Interface
+	mpaclientset              mpaClientset.Interface
+	scaleNamespacer           scale.ScalesGetter
+	mapper                    meta.RESTMapper
 	mpaLister                 mpaListers.MultidimPodAutoscalerLister
 	podLister                 clientListers.PodLister
 	eventRecorder             record.EventRecorder
@@ -39,6 +48,8 @@ type updater struct {
 
 func NewUpdater(
 	kubeclient kubeClient.Interface, mpaClient mpaClientset.Interface,
+	scaleNamespacer scale.ScalesGetter,
+	mapper meta.RESTMapper,
 	minReplicasToUpdate int, evictionFraction float64,
 	mpaTargetSelectorFetcher target.MpaTargetSelectorFetch,
 	evictionPriorityProcessor priority.Processor,
@@ -49,6 +60,10 @@ func NewUpdater(
 		return nil, fmt.Errorf("failed to create evictor factory: %v", err)
 	}
 	return &updater{
+		kubeclientset:             kubeclient,
+		mpaclientset:              mpaClient,
+		scaleNamespacer:           scaleNamespacer,
+		mapper:                    mapper,
 		mpaLister:                 utilMpa.NewMpasLister(mpaClient, namespace, make(chan struct{})),
 		podLister:                 utilPod.NewPodLister(kubeclient, namespace, make(chan struct{})),
 		eventRecorder:             updaterUtil.NewEventRecorder(kubeclient, "mpa-updater"),
@@ -133,6 +148,15 @@ func (u *updater) MainProcedure(ctx context.Context) {
 				klog.Warningf("failed to evict pod %s/%s: %v", pod.Namespace, pod.Name, err)
 			}
 		}
+		scaleObj, targetGroupResource, err := u.getScaleResource(mpa)
+		if err != nil {
+			klog.Warningf("failed to get targetRef scale resource of MPA %s/%s: %v", mpa.Namespace, mpa.Name, err)
+		} else {
+			err = u.updateScaleResourceReplicas(mpa, scaleObj, targetGroupResource)
+			if err != nil {
+				klog.Warningf("failed to update targetRef scale resource of MPA %s/%s: %v", mpa.Namespace, mpa.Name, err)
+			}
+		}
 	}
 	executionTimer.ObserveStep("EvictPods")
 }
@@ -158,4 +182,72 @@ func filterDeletedPods(pods []*corev1.Pod) []*corev1.Pod {
 		}
 	}
 	return result
+}
+
+// getScaleResource 获取mpa指向的target对应的scale resource 及其对应的 groupResource
+func (u *updater) getScaleResource(mpa *mpaTypes.MultidimPodAutoscaler) (*autoscalingv1.Scale, schema.GroupResource, error) {
+	targetGroupVersion, err := schema.ParseGroupVersion(mpa.Spec.TargetRef.APIVersion)
+	if err != nil {
+		u.eventRecorder.Event(mpa, corev1.EventTypeWarning, "FailedGetScale", err.Error())
+		return nil,
+			schema.GroupResource{},
+			fmt.Errorf("invalid API version in scale target reference of MPA(%s/%s): %v", mpa.Namespace, mpa.Name, err)
+	}
+
+	targetGroupKind := schema.GroupKind{
+		Group: targetGroupVersion.Group,
+		Kind:  mpa.Spec.TargetRef.Kind,
+	}
+
+	mappings, err := u.mapper.RESTMappings(targetGroupKind)
+	if err != nil {
+		u.eventRecorder.Event(mpa, corev1.EventTypeWarning, "FailedGetScale", err.Error())
+		return nil,
+			schema.GroupResource{},
+			fmt.Errorf("unable to determine resource for scale target reference of MPA(%s/%s): %v", mpa.Namespace, mpa.Name, err)
+	}
+
+	var (
+		targetGroupResource schema.GroupResource
+		scaleObj            *autoscalingv1.Scale
+	)
+	for _, mapping := range mappings {
+		targetGroupResource = mapping.Resource.GroupResource()
+		scaleObj, err =
+			u.scaleNamespacer.Scales(mpa.Namespace).Get(context.TODO(), targetGroupResource, mpa.Spec.TargetRef.Name, metav1.GetOptions{})
+		if err == nil {
+			break
+		}
+	}
+
+	if err != nil {
+		u.eventRecorder.Event(mpa, corev1.EventTypeWarning, "FailedGetScale", err.Error())
+		return nil,
+			schema.GroupResource{},
+			fmt.Errorf("failed to query scale subresource for scale target reference of MPA(%s/%s): %v", mpa.Namespace, mpa.Name, err)
+	}
+
+	return scaleObj, targetGroupResource, nil
+}
+
+func (u *updater) updateScaleResourceReplicas(
+	mpa *mpaTypes.MultidimPodAutoscaler,
+	scaleObj *autoscalingv1.Scale,
+	targetGR schema.GroupResource,
+) error {
+	oldReplicas := scaleObj.Spec.Replicas
+	newReplicas := int32(mpa.Status.RecommendationResources.TargetPodNum)
+
+	scaleObj.Spec.Replicas = newReplicas
+
+	_, err := u.scaleNamespacer.Scales(mpa.Namespace).Update(context.TODO(), targetGR, scaleObj, metav1.UpdateOptions{})
+
+	if err != nil {
+		u.eventRecorder.Eventf(mpa, corev1.EventTypeWarning, "FailedScale", "New size: %d; error: %v", newReplicas, err.Error())
+		return fmt.Errorf("failed to scale MPA(%s/%s)'s targetRef %s: %v", mpa.Namespace, mpa.Name, mpa.Spec.TargetRef.Name, err)
+	}
+	u.eventRecorder.Eventf(mpa, corev1.EventTypeNormal, "SuccessfulScale", "New size: %d;", newReplicas)
+	klog.Infof("Successful rescale of %s, old size: %d, new size: %d, reason: %s",
+		mpa.Name, oldReplicas, newReplicas)
+	return nil
 }
