@@ -1,4 +1,4 @@
-FROM gcr.io/distroless/static:latest
+FROM registry.cn-shanghai.aliyuncs.com/k8s-images-aliver/distroless-static:latest
 
 ARG ARCH
 COPY updater-$ARCH /updater
