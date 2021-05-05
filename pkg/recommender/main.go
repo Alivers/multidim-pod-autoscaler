@@ -1,4 +1,4 @@
-package recommender
+package main
 
 import (
 	"context"
