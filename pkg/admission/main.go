@@ -34,7 +34,7 @@ var (
 		tlsPrivateKey: flag.String("tls-private-key", "/etc/mpa-tls-certs/serverKey.pem", "server秘钥的路径"),
 	}
 	port               = flag.Int("port", 8000, "webhook server 监听的端口号")
-	prometheusAddress  = flag.String("address", ":8945", "Prometheus metrics对外暴露的地址")
+	prometheusAddress  = flag.String("address", ":8944", "Prometheus metrics对外暴露的地址")
 	kubeconfig         = flag.String("kubeconfig", "", "Path to kubeconfig. 使用out-cluster配置时指定")
 	kubeApiQps         = flag.Float64("kube-api-qps", 5.0, "访问API-Server的 QPS 限制")
 	kubeApiBurst       = flag.Int("kube-api-burst", 10, "访问API-Server的 QPS 峰值限制")
