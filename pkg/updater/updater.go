@@ -75,6 +75,12 @@ func (u *updater) MainProcedure(ctx context.Context) {
 			klog.V(3).Infof("skipped MPA Object %v/%v(its update mode was set to off(default is Auto))", mpa.Namespace, mpa.Name)
 			continue
 		}
+		condition := utilMpa.GetMpaLatestCondition(mpa)
+		// 只有在 RecommendationProvided (推荐方案可用且可以更新到pods) 状态下才更新
+		if condition.Type != mpaTypes.RecommendationProvided {
+			klog.V(3).Infof("skipped MPA Object %v/%v(its latest condition was %v)", mpa.Namespace, mpa.Name, condition)
+			continue
+		}
 		selector, err := u.mpaTargetSelectorFetcher.Fetch(mpa)
 		if err != nil {
 			klog.V(3).Infof("skipped MPA Object %v/%v(connot fetch the target reference selector for it)", mpa.Namespace, mpa.Name)

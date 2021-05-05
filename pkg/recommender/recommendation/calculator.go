@@ -9,17 +9,25 @@ import (
 	"multidim-pod-autoscaler/pkg/recommender/metrics"
 	"multidim-pod-autoscaler/pkg/recommender/util"
 	utilMpa "multidim-pod-autoscaler/pkg/util/mpa"
-	"time"
 )
 
 var (
 	cpuRequestMap = map[int64]int64{
 		250:  10,
 		500:  18,
-		750:  24,
-		1000: 30,
-		1250: 34,
-		1500: 40,
+		750:  27,
+		1000: 37,
+		1250: 42,
+		1500: 59,
+		1750: 61,
+		2000: 63,
+		2250: 65,
+	}
+	servicePenaltyCostMap = map[float64]float64{
+		0.9:  1.0 * 0,
+		0.85: 1.0 * 0.2,
+		0.8:  1.0 * 0.5,
+		0.0:  1.0 * 1.0,
 	}
 	// fractional constant
 	factConst = []float64{1,
@@ -34,23 +42,27 @@ var (
 		2.505210838544172e-08, 2.08767569878681e-09, 1.6059043836821613e-10, 1.1470745597729725e-11, 7.647163731819816e-13,
 		4.779477332387385e-14,
 	}
-
-	recommendationBetterThresold = 0.1
 )
 
 const (
-	podNumMax int = 16
+	podNumMin int64 = 1
+	podNumMax int64 = 16
 	// defaultResponseTime 请求默认响应时间 ms
-	defaultResponseTime = 1000
+	defaultResponseTime = 300
 	// cpuPrice cpu单价 vCore/s
 	cpuPrice = 0.00003334
 	// podCreateTime pod 创建时间 ms
 	podCreateTime int64 = 5000
 	// recommenderInterval 两次推荐的间隔时间
-	recommenderInterval = int64(1 * time.Minute)
+	recommenderInterval = int64(1 * 60 * 1000)
 	// 资源成本与违约成本分别的占比
 	resourceCostRatio = 0.5
 	penaltyCostRatio  = 1.0 - resourceCostRatio
+	// 资源成本的最值
+	resourceCostMax = float64(podNumMax*2250) * cpuPrice
+	resourceCostMin = float64(podNumMin*250) * cpuPrice
+	// 推荐方案更新的阈值
+	recommendationBetterThresold = 0.1
 )
 
 type RecommendationAction string
@@ -150,15 +162,15 @@ func recommendResource(qps int64, expectRespTime int) (float64, int64, int64) {
 
 	for cpu, reqs := range cpuRequestMap {
 		waitTime := float64(expectRespTime) - 1.0/float64(reqs)
-		for podNum := 1; podNum <= podNumMax; podNum += 1 {
+		for podNum := podNumMin; podNum <= podNumMax; podNum += 1 {
 			// 服务强度 ρ
-			serviceIntensity := float64(qps) / float64(int64(podNum)*reqs)
+			serviceIntensity := float64(qps) / float64(podNum*reqs)
 
-			score := evaluatePolicy(cpu, int64(podNum), reqs, qps, waitTime, serviceIntensity)
+			score := evaluatePolicy(cpu, podNum, reqs, qps, waitTime, serviceIntensity)
 			// 更新推荐方案
 			if score > curScore {
 				curScore = score
-				curPodNum = int64(podNum)
+				curPodNum = podNum
 				curCpuQuantity = cpu
 			}
 		}
@@ -174,9 +186,9 @@ func evaluatePolicy(res, podNum, reqs, qps int64, waitTime, serviceIntensity flo
 		return 0.0
 	}
 
-	serviceScore := queueRequests(reqs, qps, int64(podNum), waitTime, serviceIntensity)
+	serviceScore := queueRequests(reqs, qps, podNum, waitTime, serviceIntensity)
 	// 通过资源成本和违约成本计算方案得分
-	resCost := calculateResourceCost(res, int64(podNum))
+	resCost := calculateResourceCost(res, podNum)
 	penaltyCost := calculatePenaltyCost(serviceScore)
 	score := calculatePolicyScore(resCost, penaltyCost)
 
@@ -184,19 +196,25 @@ func evaluatePolicy(res, podNum, reqs, qps int64, waitTime, serviceIntensity flo
 }
 
 func calculateResourceCost(res int64, podNum int64) float64 {
-	// 资源量 * 单价 * 时间
-	return float64(podNum*res) * cpuPrice * float64(podCreateTime+recommenderInterval)
+	// 资源量 * 单价
+	cost := float64(podNum*res) * cpuPrice
+	// 最大最小归一化
+	return (cost - resourceCostMin) / (resourceCostMax - resourceCostMin)
 }
 
 // calculatePenaltyCost 计算违约成本
 func calculatePenaltyCost(serviceScore float64) float64 {
-	return 0.0
+	for score, Cost := range servicePenaltyCostMap {
+		if serviceScore >= score {
+			return Cost
+		}
+	}
+	return 1.0
 }
 
 // calculatePolicyScore 计算方案得分(归一化两个成本并乘以各自的权重)
 func calculatePolicyScore(resourceCost, penaltyCost float64) float64 {
-
-	return 0.0
+	return resourceCost*resourceCostRatio + penaltyCost*penaltyCostRatio
 }
 
 // queueRequests 通过 M/M/C 排队论模型，评估输入方案的服务可用性

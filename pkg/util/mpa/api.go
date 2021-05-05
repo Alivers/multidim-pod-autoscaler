@@ -66,6 +66,19 @@ func GetMpaUpdateMode(mpa *mpaTypes.MultidimPodAutoscaler) mpaTypes.UpdateMode {
 	return *mpa.Spec.UpdatePolicy.UpdateMode
 }
 
+// GetMpaLatestCondition 获取mpa最新的状态条件
+func GetMpaLatestCondition(mpa *mpaTypes.MultidimPodAutoscaler) mpaTypes.MultidimPodAutoscalerCondition {
+	if mpa.Status.Conditions == nil || len(mpa.Status.Conditions) <= 0 {
+		return mpaTypes.MultidimPodAutoscalerCondition{
+			Type:               mpaTypes.RecommendationProvided,
+			Status:             corev1.ConditionTrue,
+			LastTransitionTime: metav1.Now(),
+			Reason:             "NoConditionGenerated",
+		}
+	}
+	return mpa.Status.Conditions[len(mpa.Status.Conditions)-1]
+}
+
 // GetContainerResourcePolicy 获取指定容器的资源策略
 // 返回值可能为 nil
 func GetContainerResourcePolicy(containerName string, podPolicy *mpaTypes.PodResourcePolicy) *mpaTypes.ContainerResourcePolicy {
