@@ -20,7 +20,7 @@ build-binary: clean
 	$(ENVVAR) GOOS=$(GOOS) go build -o ${COMPONENT}
 
 .PHONY: build-binary-with-vendor
-build-binary-with-vendor: $(addprefix build-binary-with-vendor-,$(ALL_ARCHITECTURES)) clean
+build-binary-with-vendor: $(addprefix build-binary-with-vendor-,$(ALL_ARCHITECTURES))
 
 .PHONY: build-binary-with-vendor-*
 build-binary-with-vendor-%:
@@ -45,7 +45,7 @@ endif
 docker-push: $(addprefix sub-push-,$(ALL_ARCHITECTURES)) ;
 
 .PHONY: sub-push-*
-sub-push-%: docker-build-% do-push-% ;
+sub-push-%: build-binary-with-vendor-% docker-build-% do-push-% ;
 
 .PHONY: do-push-*
 do-push-%:
