@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"context"
@@ -16,9 +16,8 @@ const (
 	webhookConfigName = "mpa-webhook-config"
 )
 
-// get a clientset with in-cluster config.
-// getClient 使用 k8s集群内部配置构造并返回 clientset
-func getClient() *kubernetes.Clientset {
+// GetClient 使用 k8s集群内部配置构造并返回 clientset
+func GetClient() *kubernetes.Clientset {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		klog.Fatal(err)
@@ -30,8 +29,8 @@ func getClient() *kubernetes.Clientset {
 	return clientset
 }
 
-// configTLS 配置https证书链
-func configTLS(clientset *kubernetes.Clientset, serverCert, serverKey []byte) *tls.Config {
+// ConfigTLS 配置https证书链
+func ConfigTLS(clientset *kubernetes.Clientset, serverCert, serverKey []byte) *tls.Config {
 	sCert, err := tls.X509KeyPair(serverCert, serverKey)
 	if err != nil {
 		klog.Fatal(err)
@@ -41,8 +40,8 @@ func configTLS(clientset *kubernetes.Clientset, serverCert, serverKey []byte) *t
 	}
 }
 
-// webhookRegistration向 api-server 注册 admission控制器的webhook配置
-func webhookRegistration(clientset *kubernetes.Clientset, caCert []byte, namespace, serviceName, url string, registerByURL bool, timeoutSeconds int32) {
+// WebhookRegistration api-server 注册 admission控制器的webhook配置
+func WebhookRegistration(clientset *kubernetes.Clientset, caCert []byte, namespace, serviceName, url string, registerByURL bool, timeoutSeconds int32) {
 	time.Sleep(10 * time.Second)
 	webhookClient := clientset.AdmissionregistrationV1().MutatingWebhookConfigurations()
 	_, err := webhookClient.Get(context.TODO(), webhookConfigName, metav1.GetOptions{})

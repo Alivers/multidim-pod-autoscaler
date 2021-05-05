@@ -9,6 +9,7 @@ import (
 	cliFlag "k8s.io/component-base/cli/flag"
 	"k8s.io/klog"
 	mpaClientset "multidim-pod-autoscaler/pkg/client/clientset/versioned"
+	"multidim-pod-autoscaler/pkg/recommender/logic"
 	recommenderMetrics "multidim-pod-autoscaler/pkg/recommender/metrics"
 	"multidim-pod-autoscaler/pkg/recommender/recommendation"
 	recommenderUtil "multidim-pod-autoscaler/pkg/recommender/util"
@@ -61,7 +62,7 @@ func main() {
 	}
 	recommendationProcessor := utilRecommendation.NewProcessor(limitRangeCalculator)
 
-	recommender, err := NewRecommender(
+	recommender, err := logic.NewRecommender(
 		kubeclient,
 		mpaClient,
 		targetSelectorFetcher,

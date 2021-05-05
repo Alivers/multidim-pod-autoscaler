@@ -10,6 +10,7 @@ import (
 	"k8s.io/klog"
 	mpaClientset "multidim-pod-autoscaler/pkg/client/clientset/versioned"
 	"multidim-pod-autoscaler/pkg/target"
+	"multidim-pod-autoscaler/pkg/updater/logic"
 	"multidim-pod-autoscaler/pkg/updater/priority"
 	updaterUtil "multidim-pod-autoscaler/pkg/updater/util"
 	"multidim-pod-autoscaler/pkg/util"
@@ -57,7 +58,7 @@ func main() {
 
 	mapper, scaleNamespacer := updaterUtil.NewMapperAndScaleGetter(config, kubeclient)
 
-	updater, err := NewUpdater(
+	updater, err := logic.NewUpdater(
 		kubeclient,
 		mpaClient,
 		scaleNamespacer,

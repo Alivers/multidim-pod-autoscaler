@@ -8,6 +8,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	cliFlag "k8s.io/component-base/cli/flag"
 	"k8s.io/klog"
+	"multidim-pod-autoscaler/pkg/admission/config"
+	"multidim-pod-autoscaler/pkg/admission/logic"
 	podPatch "multidim-pod-autoscaler/pkg/admission/pod/patch"
 	admissionUtil "multidim-pod-autoscaler/pkg/admission/util"
 	clientSet "multidim-pod-autoscaler/pkg/client/clientset/versioned"
@@ -28,10 +30,10 @@ const (
 )
 
 var (
-	certsConfiguration = &certsConfig{
-		clientCaFile:  flag.String("client-ca-file", "/etc/mpa-tls-certs/caCert.pem", "CA证书的路径"),
-		tlsCertFile:   flag.String("tls-cert-file", "/etc/mpa-tls-certs/serverCert.pem", "server证书的路径"),
-		tlsPrivateKey: flag.String("tls-private-key", "/etc/mpa-tls-certs/serverKey.pem", "server秘钥的路径"),
+	certsConfiguration = &config.CertsConfig{
+		ClientCaFile:  flag.String("client-ca-file", "/etc/mpa-tls-certs/caCert.pem", "CA证书的路径"),
+		TlsCertFile:   flag.String("tls-cert-file", "/etc/mpa-tls-certs/serverCert.pem", "server证书的路径"),
+		TlsPrivateKey: flag.String("tls-private-key", "/etc/mpa-tls-certs/serverKey.pem", "server秘钥的路径"),
 	}
 	port               = flag.Int("port", 8000, "webhook server 监听的端口号")
 	prometheusAddress  = flag.String("address", ":8944", "Prometheus metrics对外暴露的地址")
@@ -56,7 +58,7 @@ func main() {
 	admissionUtil.RegisterMetrics()
 
 	// 初始化 tls 证书配置
-	certs := initCerts(*certsConfiguration)
+	certs := config.InitCerts(*certsConfiguration)
 	// 创建kubeconfig
 	kubeconfig := util.CreateKubeConfig(*kubeconfig, float32(*kubeApiQps), *kubeApiBurst)
 
@@ -83,14 +85,14 @@ func main() {
 		podPatch.NewResourceUpdatesPatchCalculator(recommendationProvider),
 	}
 
-	admissionServer := NewAdmissionServer(mpaMatcher, patchesCalculators)
+	admissionServer := logic.NewAdmissionServer(mpaMatcher, patchesCalculators)
 	http.HandleFunc("/", admissionServer.Serve)
 
 	webhookServer := &http.Server{
 		Addr:      fmt.Sprintf(":%d", *port),
-		TLSConfig: configTLS(kubeClient, certs.serverCert, certs.serverKey),
+		TLSConfig: config.ConfigTLS(kubeClient, certs.ServerCert, certs.ServerKey),
 	}
 
-	go webhookRegistration(kubeClient, certs.caCert, namespace, *serviceName, "", false, int32(*webhookTimeout))
+	go config.WebhookRegistration(kubeClient, certs.CaCert, namespace, *serviceName, "", false, int32(*webhookTimeout))
 	webhookServer.ListenAndServeTLS("", "")
 }
