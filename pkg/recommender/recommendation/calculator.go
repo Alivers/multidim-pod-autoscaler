@@ -96,7 +96,7 @@ func (c *calculator) Calculate(
 	mpaWithSelector *utilMpa.MpaWithSelector,
 	controlledPod []*corev1.Pod,
 ) (*mpaTypes.RecommendedResources, RecommendationAction, error) {
-	klog.Warningf("attempt to get qps in Namespace(%s) with podSelector(%s)")
+	klog.V(2).Infof("attempt to get qps in Namespace(%s) with podSelector(%s)", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Selector.String())
 	// 获取pods的qps
 	podsMetricsInfo, _, err :=
 		c.metricsClient.GetPodRawMetric("http_requests", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Selector, labels.NewSelector())
@@ -121,7 +121,8 @@ func (c *calculator) Calculate(
 	}
 	// 请求的期望响应时间
 	expectResponseTime := defaultResponseTime
-	if len(mpaWithSelector.Mpa.Spec.ResourcePolicy.ContainerPolicies) > 0 {
+	if mpaWithSelector.Mpa.Spec.ResourcePolicy != nil &&
+		len(mpaWithSelector.Mpa.Spec.ResourcePolicy.ContainerPolicies) > 0 {
 		expectResponseTime = mpaWithSelector.Mpa.Spec.ResourcePolicy.ContainerPolicies[0].ExpRespTime
 	}
 	var oldScore float64
