@@ -102,6 +102,8 @@ func (c *calculator) Calculate(
 		return nil, UnknownRecommendation
 	}
 
+	klog.V(4).Infof("get qps metrics of pods: %v", podsMetricsInfo)
+
 	var resourceFormat resource.Format
 
 	// 统计所有 pod副本的 qps
