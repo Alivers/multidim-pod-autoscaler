@@ -27,7 +27,7 @@ spec:
       containers:
         - name: admission
           image: aliverjon/mpa-admission-amd64:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: NAMESPACE
               valueFrom:

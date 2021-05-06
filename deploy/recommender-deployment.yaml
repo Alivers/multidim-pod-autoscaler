@@ -27,7 +27,7 @@ spec:
       containers:
         - name: recommender
           image: aliverjon/mpa-recommender-amd64:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           resources:
             limits:
               cpu: 200m
