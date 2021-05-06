@@ -39,7 +39,7 @@ func serve(w http.ResponseWriter, r *http.Request) {
 	httpRequestsTotal.Inc()
 
 	x := 0.0001
-	for i := 0; i <= 1000000; i += 1 {
+	for i := 0; i <= 10000000; i += 1 {
 		x += math.Sqrt(x)
 	}
 	buf := bytes.NewBuffer([]byte{})
