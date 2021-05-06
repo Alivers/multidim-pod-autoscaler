@@ -31,10 +31,10 @@ var (
 	recommenderInterval = flag.Duration("recommender-interval", 1*time.Minute,
 		"recommender的主流程运行频率")
 
-	prometheusAddress = flag.String("address", ":8946", "Prometheus metrics对外暴露的地址")
-	kubeconfig        = flag.String("kubeconfig", "", "Path to kubeconfig. 使用out-cluster配置时指定")
-	kubeApiQps        = flag.Float64("kube-api-qps", 5.0, "访问API-Server的 QPS 限制")
-	kubeApiBurst      = flag.Int("kube-api-burst", 10, "访问API-Server的 QPS 峰值限制")
+	metricsAddress = flag.String("address", ":8946", "Prometheus metrics对外暴露的地址")
+	kubeconfig     = flag.String("kubeconfig", "", "Path to kubeconfig. 使用out-cluster配置时指定")
+	kubeApiQps     = flag.Float64("kube-api-qps", 5.0, "访问API-Server的 QPS 限制")
+	kubeApiBurst   = flag.Int("kube-api-burst", 10, "访问API-Server的 QPS 峰值限制")
 
 	mpaObjectNamespace = flag.String("mpa-object-namespace", corev1.NamespaceAll, "搜索MPA Objects的命名空间")
 )
@@ -44,7 +44,7 @@ func main() {
 	cliFlag.InitFlags()
 	klog.V(1).Infof("Multidim Pod Autoscaler %s Recommender", utilMpa.MultidimPodAutoscalerVersion)
 
-	metrics.InitializeMetrics(*prometheusAddress)
+	metrics.InitializeMetrics(*metricsAddress)
 	recommenderMetrics.RegisterMetrics()
 
 	config := util.CreateKubeConfig(*kubeconfig, float32(*kubeApiQps), *kubeApiBurst)

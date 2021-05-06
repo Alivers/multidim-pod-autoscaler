@@ -23,7 +23,9 @@ func NewAdmissionServer(
 	mpaMatcher mpaApi.Matcher,
 	patchesCalculators []admissionUtil.PatchCalculator,
 ) *AdmissionServer {
-	as := &AdmissionServer{}
+	as := &AdmissionServer{
+		resourcesHandler: map[metav1.GroupResource]admissionUtil.Handler{},
+	}
 	podHandler := pod.NewPodHandler(mpaMatcher, patchesCalculators)
 	as.resourcesHandler[podHandler.GroupResource()] = podHandler
 
