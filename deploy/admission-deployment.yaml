@@ -26,7 +26,7 @@ spec:
         runAsUser: 65534 # nobody
       containers:
         - name: admission
-          image: aliverjon/mpa-admission:latest
+          image: aliverjon/mpa-admission-amd64:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: NAMESPACE

@@ -26,7 +26,7 @@ spec:
         runAsUser: 65534 # nobody
       containers:
         - name: updater
-          image: aliverjon/mpa-updater:0.9.2
+          image: aliverjon/mpa-updater-amd64:latest
           imagePullPolicy: IfNotPresent
           resources:
             limits:
