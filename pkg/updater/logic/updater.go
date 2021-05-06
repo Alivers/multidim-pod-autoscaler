@@ -96,6 +96,10 @@ func (u *updater) MainProcedure(ctx context.Context) {
 			klog.V(3).Infof("skipped MPA Object %v/%v(its latest condition was %v)", mpa.Namespace, mpa.Name, condition)
 			continue
 		}
+		if mpa.Status.RecommendationResources == nil {
+			klog.V(3).Infof("skipped MPA Object %v/%v(no provided recommendation)", mpa.Namespace, mpa.Name)
+			continue
+		}
 		selector, err := u.mpaTargetSelectorFetcher.Fetch(mpa)
 		if err != nil {
 			klog.V(3).Infof("skipped MPA Object %v/%v(connot fetch the target reference selector for it)", mpa.Namespace, mpa.Name)
