@@ -96,6 +96,7 @@ func (c *calculator) Calculate(
 	mpaWithSelector *utilMpa.MpaWithSelector,
 	controlledPod []*corev1.Pod,
 ) (*mpaTypes.RecommendedResources, RecommendationAction, error) {
+	klog.Warningf("attempt to get qps in Namespace(%s) with podSelector(%s)")
 	// 获取pods的qps
 	podsMetricsInfo, _, err :=
 		c.metricsClient.GetPodRawMetric("http_requests", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Selector, labels.NewSelector())
