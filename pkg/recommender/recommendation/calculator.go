@@ -148,7 +148,10 @@ func (c *calculator) Calculate(
 		return &mpaTypes.RecommendedResources{
 			TargetPodNum: int(targetPodNum),
 			ContainerRecommendations: []mpaTypes.RecommendedContainerResources{
-				{Target: corev1.ResourceList{corev1.ResourceCPU: *targetQuantity}},
+				{
+					Target:        corev1.ResourceList{corev1.ResourceCPU: *targetQuantity},
+					ContainerName: mpaTypes.DefaultContainerResourcePolicy,
+				},
 			},
 		}, ApplyRecommendation
 	}

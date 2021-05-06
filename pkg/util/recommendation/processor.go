@@ -109,10 +109,11 @@ func (p *processor) AdjustRecommendation(
 // GetContainerRecommendation 获取指定容器的推荐资源
 func GetContainerRecommendation(
 	containerName string,
-	recommendation []mpaTypes.RecommendedContainerResources) *mpaTypes.RecommendedContainerResources {
+	recommendation []mpaTypes.RecommendedContainerResources,
+) *mpaTypes.RecommendedContainerResources {
 	if recommendation != nil {
 		for _, recomm := range recommendation {
-			if containerName == recomm.ContainerName {
+			if containerName == recomm.ContainerName || recomm.ContainerName == mpaTypes.DefaultContainerResourcePolicy {
 				return &recomm
 			}
 		}

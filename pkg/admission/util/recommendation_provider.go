@@ -70,6 +70,10 @@ func getContainersResources(
 	recommendation *mpaTypes.RecommendedResources,
 	limitRange *corev1.LimitRangeItem,
 ) ([]containerUtil.Resources, recommendationUtil.ContainerAnnotationsMap) {
+	if recommendation == nil {
+		return nil, nil
+	}
+
 	resources := make([]containerUtil.Resources, len(pod.Spec.Containers))
 
 	annotations := make(recommendationUtil.ContainerAnnotationsMap)
