@@ -102,8 +102,11 @@ func (r *recommender) MainProcedure(ctx context.Context) {
 			continue
 		}
 		// 计算推荐方案
-		recommendationRes, action := r.recommendationCalculator.Calculate(mpaWithSelector, pods)
-
+		recommendationRes, action, err := r.recommendationCalculator.Calculate(mpaWithSelector, pods)
+		if err != nil {
+			klog.Warningf("failed calculate recommendation for MPA(%s/%s), skipped: %v", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Mpa.Name, err.Error())
+			continue
+		}
 		klog.V(4).Infof("calculate recommendation finished(action: %s, value: %v)", action, *recommendationRes)
 
 		var adjustRecommendation *mpaTypes.RecommendedResources

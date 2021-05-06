@@ -1,6 +1,7 @@
 package recommendation
 
 import (
+	"fmt"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
@@ -78,7 +79,7 @@ type Calculator interface {
 	Calculate(
 		mpaWithSelector *utilMpa.MpaWithSelector,
 		controlledPod []*corev1.Pod,
-	) (*mpaTypes.RecommendedResources, RecommendationAction)
+	) (*mpaTypes.RecommendedResources, RecommendationAction, error)
 }
 
 type calculator struct {
@@ -94,12 +95,12 @@ func NewCalculator(client metrics.Client) Calculator {
 func (c *calculator) Calculate(
 	mpaWithSelector *utilMpa.MpaWithSelector,
 	controlledPod []*corev1.Pod,
-) (*mpaTypes.RecommendedResources, RecommendationAction) {
+) (*mpaTypes.RecommendedResources, RecommendationAction, error) {
 	// 获取pods的qps
 	podsMetricsInfo, _, err :=
 		c.metricsClient.GetPodRawMetric("http_requests", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Selector, labels.NewSelector())
 	if err != nil {
-		return nil, UnknownRecommendation
+		return nil, UnknownRecommendation, fmt.Errorf("failed to get pods' qps: %v", err.Error())
 	}
 
 	klog.V(4).Infof("get qps metrics of pods: %v", podsMetricsInfo)
@@ -155,10 +156,10 @@ func (c *calculator) Calculate(
 					ContainerName: mpaTypes.DefaultContainerResourcePolicy,
 				},
 			},
-		}, ApplyRecommendation
+		}, ApplyRecommendation, nil
 	}
 
-	return &mpaTypes.RecommendedResources{}, SkipRecommendation
+	return &mpaTypes.RecommendedResources{}, SkipRecommendation, nil
 }
 
 // recommendResource 通过伸缩推荐算法计算资源方案
