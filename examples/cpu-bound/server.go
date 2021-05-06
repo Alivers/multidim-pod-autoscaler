@@ -8,6 +8,7 @@ import (
 	"k8s.io/klog"
 	"math"
 	"net/http"
+	"strconv"
 )
 
 var (
@@ -19,15 +20,14 @@ var (
 	)
 )
 
-func initPromeCollector() {
-	prometheus.MustRegister(httpRequestsTotal)
-}
-
 // InitializeMetrics 初始化 prometheus 处理 "/metrics" 的请求
 func initializeMetrics(address string) {
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(httpRequestsTotal)
+
 	go func() {
 		// 注册 "/metrics" 请求 的 handler
-		http.Handle("/metrics", promhttp.Handler())
+		http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 		// "/" 地址的请求 handler 为空
 		err := http.ListenAndServe(address, nil)
 		klog.Fatalf("Error occured while start metrics: %v", err)
@@ -44,14 +44,15 @@ func serve(w http.ResponseWriter, r *http.Request) {
 	buf := bytes.NewBuffer([]byte{})
 	binary.Write(buf, binary.BigEndian, &x)
 
-	if _, err := w.Write(buf.Bytes()); err != nil {
+	xStr := "result: " + strconv.FormatFloat(x, 'f', -1, 64) + "\n"
+
+	if _, err := w.Write([]byte(xStr)); err != nil {
 		klog.Error(err)
 	}
 }
 
 func main() {
 	initializeMetrics(":8081")
-	initPromeCollector()
 
 	http.HandleFunc("/", serve)
 
