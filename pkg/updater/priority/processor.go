@@ -20,5 +20,6 @@ func NewProcessor() Processor {
 }
 
 func (p *processor) GetPodsUpdateOrder(pod []*corev1.Pod, mpa *mpaTypes.MultidimPodAutoscaler) []*corev1.Pod {
-	panic("implement me")
+	// panic("implement me")
+	return pod
 }
