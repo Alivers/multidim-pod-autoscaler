@@ -74,6 +74,7 @@ func (as *AdmissionServer) admitting(
 	status := admissionUtil.Skipped
 
 	if len(patches) > 0 {
+		klog.V(4).Infof("admission get pods' patches: %v", patches)
 		// 序列化patches为 字节流数据
 		plainPatches, err := json.Marshal(patches)
 		if err != nil {

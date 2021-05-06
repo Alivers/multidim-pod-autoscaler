@@ -138,6 +138,18 @@ func (u *updater) MainProcedure(ctx context.Context) {
 	executionTimer.ObserveStep("FilterPods")
 
 	for mpa, pods := range mpaControlledPods {
+		scaleObj, targetGroupResource, err := u.getScaleResource(mpa)
+		if err != nil {
+			klog.Warningf("failed to get targetRef scale resource of MPA %s/%s: %v", mpa.Namespace, mpa.Name, err)
+		} else {
+			err = u.updateScaleResourceReplicas(mpa, scaleObj, targetGroupResource)
+			if err != nil {
+				klog.Warningf("failed to update targetRef scale resource of MPA %s/%s: %v", mpa.Namespace, mpa.Name, err)
+			} else {
+				klog.V(4).Infof("successful to update targetRef scale's replicas of MPA %s/%s: size-%d", mpa.Namespace, mpa.Name, mpa.Status.RecommendationResources.TargetPodNum)
+			}
+		}
+
 		evictor := u.evictorFactory.NewPodEvictor(pods)
 		podsUpdateOrder := u.evictionPriorityProcessor.GetPodsUpdateOrder(filterNonEvictablePods(pods, evictor), mpa)
 		for _, pod := range podsUpdateOrder {
@@ -150,15 +162,6 @@ func (u *updater) MainProcedure(ctx context.Context) {
 			err := evictor.Evict(pod, u.eventRecorder)
 			if err != nil {
 				klog.Warningf("failed to evict pod %s/%s: %v", pod.Namespace, pod.Name, err)
-			}
-		}
-		scaleObj, targetGroupResource, err := u.getScaleResource(mpa)
-		if err != nil {
-			klog.Warningf("failed to get targetRef scale resource of MPA %s/%s: %v", mpa.Namespace, mpa.Name, err)
-		} else {
-			err = u.updateScaleResourceReplicas(mpa, scaleObj, targetGroupResource)
-			if err != nil {
-				klog.Warningf("failed to update targetRef scale resource of MPA %s/%s: %v", mpa.Namespace, mpa.Name, err)
 			}
 		}
 	}

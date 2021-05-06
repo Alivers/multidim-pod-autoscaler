@@ -31,7 +31,7 @@ var (
 	minReplicasToUpdate = flag.Int("min-replicas", 1,
 		"执行update的最少的副本数量")
 
-	evictionFraction = flag.Float64("eviction-fraction", 0.5,
+	evictionFraction = flag.Float64("eviction-fraction", 1,
 		"可以驱逐的副本个数占预配置个数的比例")
 
 	prometheusAddress = flag.String("address", ":8945", "Prometheus metrics对外暴露的地址")

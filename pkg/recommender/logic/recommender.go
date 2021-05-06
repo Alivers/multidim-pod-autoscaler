@@ -104,6 +104,8 @@ func (r *recommender) MainProcedure(ctx context.Context) {
 		// 计算推荐方案
 		recommendationRes, action := r.recommendationCalculator.Calculate(mpaWithSelector, pods)
 
+		klog.V(4).Infof("calculate recommendation finished(action: %s, value: %v)", action, *recommendationRes)
+
 		var adjustRecommendation *mpaTypes.RecommendedResources
 		var newCondition mpaTypes.MultidimPodAutoscalerCondition
 		if action == recommendation.ApplyRecommendation {
@@ -134,6 +136,8 @@ func (r *recommender) MainProcedure(ctx context.Context) {
 		_, err = r.updateRecommendationIfBetter(adjustRecommendation, newCondition, mpaWithSelector.Mpa)
 		if err != nil {
 			klog.Errorf("failed to update the recommendation resources for MPA(%s/%s): %v", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Mpa.Name, err)
+		} else {
+			klog.V(4).Infof("Successful recommendation for MPA(%s/%s): %v", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Mpa.Name, *adjustRecommendation)
 		}
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/klog"
 	admissionUtil "multidim-pod-autoscaler/pkg/admission/util"
 	v1 "multidim-pod-autoscaler/pkg/apis/autoscaling/v1"
 	containerUtil "multidim-pod-autoscaler/pkg/util/container"
@@ -39,6 +40,8 @@ func (r *resourceUpdatesPatchCalculator) CalculatePatches(
 	containersRecommendedResources, annotationsPerContainer, err := r.recommendationProvider.GetContainerResourcesForPod(pod, mpa)
 	if err != nil {
 		return patches, fmt.Errorf("failed to calculate resource patch for pod %v/%v: %v", pod.Namespace, pod.Name, err)
+	} else {
+		klog.V(4).Infof("get containers' recommendation(pod: %s/%s): %v", containersRecommendedResources, pod.Namespace, pod.Name)
 	}
 
 	if annotationsPerContainer == nil {
