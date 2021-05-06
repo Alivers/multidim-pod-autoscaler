@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 var (
@@ -44,7 +45,7 @@ func serve(w http.ResponseWriter, r *http.Request) {
 	buf := bytes.NewBuffer([]byte{})
 	binary.Write(buf, binary.BigEndian, &x)
 
-	xStr := "result: " + strconv.FormatFloat(x, 'f', -1, 64) + "\n"
+	xStr := "time: " + time.Now().String() + " | result: " + strconv.FormatFloat(x, 'f', -1, 64) + "\n"
 
 	if _, err := w.Write([]byte(xStr)); err != nil {
 		klog.Error(err)
