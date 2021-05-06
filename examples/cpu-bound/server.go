@@ -50,10 +50,10 @@ func serve(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	initializeMetrics(":80")
+	initializeMetrics(":8081")
 	initPromeCollector()
 
 	http.HandleFunc("/", serve)
 
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8082", nil)
 }
