@@ -3,6 +3,7 @@ package recommendation
 import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/klog"
 	"math"
 	mpaTypes "multidim-pod-autoscaler/pkg/apis/autoscaling/v1"
@@ -96,7 +97,7 @@ func (c *calculator) Calculate(
 ) (*mpaTypes.RecommendedResources, RecommendationAction) {
 	// 获取pods的qps
 	podsMetricsInfo, _, err :=
-		c.metricsClient.GetPodRawMetric("http_requests", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Selector, nil)
+		c.metricsClient.GetPodRawMetric("http_requests", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Selector, labels.NewSelector())
 	if err != nil {
 		return nil, UnknownRecommendation
 	}
