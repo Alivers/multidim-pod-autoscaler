@@ -45,7 +45,7 @@ endif
 docker-push: $(addprefix sub-push-,$(ALL_ARCHITECTURES)) ;
 
 .PHONY: sub-push-*
-sub-push-%: build-binary-with-vendor-% docker-build-% do-push-% ;
+sub-push-%: build-binary-with-vendor-% docker-build-% do-push-% clean;
 
 .PHONY: do-push-*
 do-push-%:
