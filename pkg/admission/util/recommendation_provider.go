@@ -7,7 +7,6 @@ import (
 	mpaTypes "multidim-pod-autoscaler/pkg/apis/autoscaling/v1"
 	containerUtil "multidim-pod-autoscaler/pkg/util/container"
 	"multidim-pod-autoscaler/pkg/util/limitrange"
-	mpaApi "multidim-pod-autoscaler/pkg/util/mpa"
 	recommendationUtil "multidim-pod-autoscaler/pkg/util/recommendation"
 )
 
@@ -94,21 +93,22 @@ func getContainersResources(
 		if limitRange != nil {
 			defaultLimit = limitRange.Default
 		}
-		containerControlledMode := mpaApi.GetContainerControlledMode(container.Name, podPolicy)
-		if containerControlledMode == mpaTypes.ContainerControlledRequestsAndLimits {
-			// 需要同时伸缩 request 和 limit
-			recommLimit, anotation := containerUtil.GetProportionalLimit(
-				container.Resources.Limits, container.Resources.Requests,
-				resources[i].Requests, defaultLimit)
+		//containerControlledMode := mpaApi.GetContainerControlledMode(container.Name, podPolicy)
+		//if containerControlledMode == mpaTypes.ContainerControlledRequestsAndLimits {
+		// 需要同时伸缩 request 和 limit
+		recommLimit, anotation := containerUtil.GetProportionalLimit(
+			container.Resources.Limits, container.Resources.Requests,
+			resources[i].Requests, defaultLimit)
 
-			if recommLimit != nil {
-				// 设置伸缩后的limit
-				resources[i].Limits = recommLimit
-				if len(anotation) > 0 {
-					annotations[container.Name] = anotation
-				}
+		if recommLimit != nil {
+			// 设置伸缩后的limit
+			resources[i].Limits = recommLimit
+			if len(anotation) > 0 {
+				annotations[container.Name] = anotation
 			}
 		}
+		//}
+		klog.V(4).Infof("container(%s) of pod(%s/%s)'s recommendation: request-%v limits-%v", container.Name, pod.Namespace, pod.Name, resources[i].Requests, resources[i].Limits)
 	}
 	return resources, annotations
 }
