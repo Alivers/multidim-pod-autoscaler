@@ -29,7 +29,7 @@ func NewObservedPodPatchCalculator() util.PatchCalculator {
 func GetEmptyAddAnnotationsPatch() patch.Patch {
 	return patch.Patch{
 		Op:    patch.Add,
-		Path:  "metadata/annotations",
+		Path:  "/metadata/annotations",
 		Value: map[string]string{},
 	}
 }
@@ -38,7 +38,7 @@ func GetEmptyAddAnnotationsPatch() patch.Patch {
 func GetAddAnnotationsPatch(annotationsName, annotationsValue string) patch.Patch {
 	return patch.Patch{
 		Op:    patch.Add,
-		Path:  fmt.Sprintf("metadata/annotations/%s", annotationsName),
+		Path:  fmt.Sprintf("/metadata/annotations/%s", annotationsName),
 		Value: annotationsValue,
 	}
 }

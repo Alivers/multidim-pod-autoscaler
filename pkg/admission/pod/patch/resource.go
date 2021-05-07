@@ -41,7 +41,7 @@ func (r *resourceUpdatesPatchCalculator) CalculatePatches(
 	if err != nil {
 		return patches, fmt.Errorf("failed to calculate resource patch for pod %v/%v: %v", pod.Namespace, pod.Name, err)
 	} else {
-		klog.V(4).Infof("get containers' recommendation(pod: %s/%s): %v", containersRecommendedResources, pod.Namespace, pod.Name)
+		klog.V(4).Infof("get containers' recommendation(pod: %s/%s): %v", pod.Namespace, pod.Name, containersRecommendedResources)
 	}
 
 	if annotationsPerContainer == nil {

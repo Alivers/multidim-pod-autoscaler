@@ -6,6 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
 	cachedDiscovery "k8s.io/client-go/discovery/cached"
@@ -22,6 +23,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog"
 
+	mpascheme "multidim-pod-autoscaler/pkg/client/clientset/versioned/scheme"
 	"multidim-pod-autoscaler/pkg/target"
 	"time"
 )
@@ -29,6 +31,7 @@ import (
 // NewEventRecorder 返回一个新的 EvenetRecorder 用于事件上报
 // component 为上报事件的组件名
 func NewEventRecorder(client kubeClient.Interface, component string) record.EventRecorder {
+	utilruntime.Must(mpascheme.AddToScheme(scheme.Scheme))
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.V(4).Infof)
 	if _, isFake := client.(*fake.Clientset); !isFake {

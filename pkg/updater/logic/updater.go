@@ -254,7 +254,7 @@ func (u *updater) updateScaleResourceReplicas(
 		return fmt.Errorf("failed to scale MPA(%s/%s)'s targetRef %s: %v", mpa.Namespace, mpa.Name, mpa.Spec.TargetRef.Name, err)
 	}
 	u.eventRecorder.Eventf(mpa, corev1.EventTypeNormal, "SuccessfulScale", "New size: %d;", newReplicas)
-	klog.Infof("Successful rescale of %s, old size: %d, new size: %d, reason: %s",
+	klog.Infof("Successful rescale of %s, old size: %d, new size: %d",
 		mpa.Name, oldReplicas, newReplicas)
 	return nil
 }
