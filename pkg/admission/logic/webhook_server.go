@@ -104,7 +104,7 @@ func (as *AdmissionServer) Serve(writer http.ResponseWriter, request *http.Reque
 	var body []byte
 	if request.Body != nil {
 		// 读取请求的body数据
-		if data, err := ioutil.ReadAll(request.Body); err != nil {
+		if data, err := ioutil.ReadAll(request.Body); err == nil {
 			body = data
 		}
 	}
