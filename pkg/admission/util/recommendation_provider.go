@@ -106,6 +106,9 @@ func getContainersResources(
 			if len(anotation) > 0 {
 				annotations[container.Name] = anotation
 			}
+		} else {
+			resources[i].Limits = resources[i].Requests
+			annotations[container.Name] = []string{"EmptydefaultLimits, set to the same with Requests"}
 		}
 		//}
 		klog.V(4).Infof("container(%s) of pod(%s/%s)'s recommendation: request-%v limits-%v", container.Name, pod.Namespace, pod.Name, resources[i].Requests, resources[i].Limits)
