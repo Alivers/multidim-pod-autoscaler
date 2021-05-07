@@ -87,14 +87,14 @@ func WebhookRegistration(clientset *kubernetes.Clientset, caCert []byte, namespa
 						},
 					},
 					// 拦截创建、更新MPA对象的请求
-					{
-						Operations: []admissionregistration.OperationType{admissionregistration.Create, admissionregistration.Update},
-						Rule: admissionregistration.Rule{
-							APIGroups:   []string{"autoscaling.k8s.io"},
-							APIVersions: []string{"*"},
-							Resources:   []string{"multidimpodautoscalers"},
-						},
-					},
+					//{
+					//	Operations: []admissionregistration.OperationType{admissionregistration.Create, admissionregistration.Update},
+					//	Rule: admissionregistration.Rule{
+					//		APIGroups:   []string{"autoscaling.k8s.io"},
+					//		APIVersions: []string{"*"},
+					//		Resources:   []string{"multidimpodautoscalers"},
+					//	},
+					//},
 				},
 				FailurePolicy:  &failurePolicy,
 				ClientConfig:   RegisterClientConfig,
