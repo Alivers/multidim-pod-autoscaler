@@ -74,7 +74,7 @@ func WebhookRegistration(clientset *kubernetes.Clientset, caCert []byte, namespa
 		Webhooks: []admissionregistration.MutatingWebhook{
 			{
 				Name:                    "mpa.k8s.io",
-				AdmissionReviewVersions: []string{"v1"},
+				AdmissionReviewVersions: []string{"v1beta1"},
 				// webhook 的操作规则
 				Rules: []admissionregistration.RuleWithOperations{
 					// 拦截创建Pod的请求
