@@ -26,10 +26,10 @@ var (
 		2250: 65,
 	}
 	servicePenaltyCostMap = map[float64]float64{
-		0.9:  1.0 * 0,
-		0.85: 1.0 * 0.2,
-		0.8:  1.0 * 0.5,
-		0.0:  1.0 * 1.0,
+		0.9:  1.0 - 1.0*0,
+		0.85: 1.0 - 1.0*0.2,
+		0.8:  1.0 - 1.0*0.5,
+		0.0:  1.0 - 1.0*1.0,
 	}
 	// fractional constant
 	factConst = []float64{1,
@@ -173,7 +173,7 @@ func recommendResource(qps int64, expectRespTime int) (float64, int64, int64) {
 		waitTime := float64(expectRespTime) - 1.0/float64(reqs)
 		for podNum := podNumMin; podNum <= podNumMax; podNum += 1 {
 			// 服务强度 ρ
-			serviceIntensity := float64(qps) / float64(podNum*reqs)
+			serviceIntensity := float64(qps) / float64(podNum*reqs) / 1000.0
 
 			score := evaluatePolicy(cpu, podNum, reqs, qps, waitTime, serviceIntensity)
 			// 更新推荐方案
@@ -210,7 +210,7 @@ func calculateResourceCost(res int64, podNum int64) float64 {
 	// 资源量 * 单价
 	cost := float64(podNum*res) * cpuPrice
 	// 最大最小归一化
-	return (cost - resourceCostMin) / (resourceCostMax - resourceCostMin)
+	return (resourceCostMax - cost) / (resourceCostMax - resourceCostMin)
 }
 
 // calculatePenaltyCost 计算违约成本

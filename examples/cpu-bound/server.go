@@ -53,9 +53,10 @@ func serve(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	// prometheus metrics api
 	initializeMetrics(":8081")
 
+	// 服务接口
 	http.HandleFunc("/", serve)
-
 	http.ListenAndServe(":8082", nil)
 }
