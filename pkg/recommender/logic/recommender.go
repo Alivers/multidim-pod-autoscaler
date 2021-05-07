@@ -106,32 +106,38 @@ func (r *recommender) MainProcedure(ctx context.Context) {
 		recommendationRes, action, err := r.recommendationCalculator.Calculate(mpaWithSelector, pods)
 		if err != nil {
 			klog.Warningf("failed calculate recommendation for MPA(%s/%s), skipped: %v", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Mpa.Name, err.Error())
+			r.updateMpaCondition(&mpaTypes.MultidimPodAutoscalerCondition{
+				Type:               mpaTypes.RecommendationSkipped,
+				Status:             corev1.ConditionTrue,
+				LastTransitionTime: metav1.Now(),
+				Reason:             "CalculateRecommendationFailed",
+			}, mpaWithSelector.Mpa)
 			continue
 		}
 		klog.V(4).Infof("calculate recommendation finished(action: %s, value: %v)", action, *recommendationRes)
 
 		var adjustRecommendation *mpaTypes.RecommendedResources
-		var newCondition mpaTypes.MultidimPodAutoscalerCondition
+		newCondition := mpaTypes.MultidimPodAutoscalerCondition{
+			Status:             corev1.ConditionTrue,
+			LastTransitionTime: metav1.Now(),
+		}
 		if action == recommendation.ApplyRecommendation {
 			// 调整推荐方案
 			adjustRecommendation, _, err =
 				r.recommendationProcessor.AdjustRecommendation(recommendationRes, mpaWithSelector.Mpa.Spec.ResourcePolicy, pods[0])
 			if err != nil {
 				klog.Errorf("failed to adjust the recommendation resources of MPA(%s/%s): %v", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Mpa.Name, err)
+				newCondition.Type = mpaTypes.RecommendationSkipped
+				newCondition.Reason = "AdjustRecommendationFailed"
+				r.updateMpaCondition(&newCondition, mpaWithSelector.Mpa)
 				continue
 			}
-			newCondition.Status = corev1.ConditionTrue
-			newCondition.LastTransitionTime = metav1.Now()
 			newCondition.Type = mpaTypes.RecommendationProvided
 			newCondition.Reason = "Recommendation Provided"
 		} else if action == recommendation.SkipRecommendation {
-			newCondition.Status = corev1.ConditionTrue
-			newCondition.LastTransitionTime = metav1.Now()
 			newCondition.Type = mpaTypes.RecommendationSkipped
 			newCondition.Reason = "Recommendation Skipped"
 		} else {
-			newCondition.Status = corev1.ConditionTrue
-			newCondition.LastTransitionTime = metav1.Now()
 			newCondition.Type = mpaTypes.RecommendationSkipped
 			newCondition.Reason = "Recommendation Unknown"
 		}
@@ -144,6 +150,21 @@ func (r *recommender) MainProcedure(ctx context.Context) {
 			klog.V(4).Infof("Successful recommendation for MPA(%s/%s): %v", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Mpa.Name, adjustRecommendation)
 		}
 	}
+}
+
+// updateMpaCondition 更新mpa对象的状态条件，用于判断是否需要应用推荐方案
+func (r *recommender) updateMpaCondition(
+	newStatusCondition *mpaTypes.MultidimPodAutoscalerCondition,
+	mpa *mpaTypes.MultidimPodAutoscaler,
+) (bool, error) {
+	if newStatusCondition == nil {
+		return false, fmt.Errorf("no aviliable status condition to update the MPA(%s/%s)'s status", mpa.Namespace, mpa.Name)
+	}
+	mpaCopy := mpa.DeepCopy()
+	mpaCopy.Status.Conditions = append(mpaCopy.Status.Conditions, *newStatusCondition)
+	_, err :=
+		r.mpaclientset.AutoscalingV1().MultidimPodAutoscalers(mpa.Namespace).Update(context.TODO(), mpaCopy, metav1.UpdateOptions{})
+	return true, err
 }
 
 // updateRecommendationIfBetter 更新mpa对象的资源推荐方案
