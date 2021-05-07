@@ -149,7 +149,7 @@ func (c *calculator) Calculate(
 	}
 
 	// 如果旧方案得分为零(无方案) 或 当前方案得分超出旧方案得分 threshold 则进行更新
-	if oldScore < 0.000001 || (score-oldScore)/oldScore > recommendationBetterThresold {
+	if oldScore < 0.0000001 || (score-oldScore)/oldScore > recommendationBetterThresold {
 		return &mpaTypes.RecommendedResources{
 			TargetPodNum: int(targetPodNum),
 			ContainerRecommendations: []mpaTypes.RecommendedContainerResources{
@@ -200,6 +200,8 @@ func evaluatePolicy(res, podNum, reqs, qps int64, waitTime, serviceIntensity flo
 	resCost := calculateResourceCost(res, podNum)
 	penaltyCost := calculatePenaltyCost(serviceScore)
 	score := calculatePolicyScore(resCost, penaltyCost)
+
+	klog.V(4).Infof("calculate policy score: cpuQuantity-%dm,podNum-%d,Req/s-%d,qps-%dm,serviceIntensity-%g,waitTime-%g with score(serviceScore=%g,resourceCost=%g,penaltyCost=%g,finalScore=%g)", res, podNum, reqs, qps, serviceIntensity, waitTime, serviceScore, resCost, penaltyCost, score)
 
 	return score
 }

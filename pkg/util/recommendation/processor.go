@@ -56,9 +56,12 @@ func (p *processor) AdjustRecommendation(
 	policy *mpaTypes.PodResourcePolicy,
 	pod *corev1.Pod,
 ) (*mpaTypes.RecommendedResources, ContainerAnnotationsMap, error) {
-	if podRecommendation == nil || policy == nil {
-		return nil, nil, nil
+	if podRecommendation == nil {
+		return nil, nil, fmt.Errorf("no recommendation aviliable for adjust(pod: %s/%s)", pod.Namespace, pod.Name)
 	}
+
+	return podRecommendation, nil, nil
+	// TODO: 修正当前的limitrange计算
 
 	var adjustedRecommendations []mpaTypes.RecommendedContainerResources
 	containersAnnotations := ContainerAnnotationsMap{}
@@ -195,14 +198,14 @@ func (p *processor) adjustToPodLimitRange(
 	recommendations []mpaTypes.RecommendedContainerResources,
 	pod *corev1.Pod,
 ) ([]mpaTypes.RecommendedContainerResources, error) {
-	podLimitRange, err := p.limitRangeCalculator.GetPodLimitRangeItem(pod.Namespace)
-	if err != nil {
-		return nil, fmt.Errorf("connot fetch pod(name: %v)'s limit range: %v", pod.Name, err)
-	}
-	if podLimitRange == nil {
-		// 没有 limit range 的限制，原样返回
-		return recommendations, nil
-	}
+	//podLimitRange, err := p.limitRangeCalculator.GetPodLimitRangeItem(pod.Namespace)
+	//if err != nil {
+	//	return nil, fmt.Errorf("connot fetch pod(name: %v)'s limit range: %v", pod.Name, err)
+	//}
+	//if podLimitRange == nil {
+	//	// 没有 limit range 的限制，原样返回
+	//	return recommendations, nil
+	//}
 	// TODO: 调整推荐以符合 POD 的 LimitRange 限制
 	return recommendations, nil
 }

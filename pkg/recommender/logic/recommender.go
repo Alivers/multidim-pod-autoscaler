@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"fmt"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -140,7 +141,7 @@ func (r *recommender) MainProcedure(ctx context.Context) {
 		if err != nil {
 			klog.Errorf("failed to update the recommendation resources for MPA(%s/%s): %v", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Mpa.Name, err)
 		} else {
-			klog.V(4).Infof("Successful recommendation for MPA(%s/%s): %v", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Mpa.Name, *adjustRecommendation)
+			klog.V(4).Infof("Successful recommendation for MPA(%s/%s): %v", mpaWithSelector.Mpa.Namespace, mpaWithSelector.Mpa.Name, adjustRecommendation)
 		}
 	}
 }
@@ -150,10 +151,11 @@ func (r *recommender) updateRecommendationIfBetter(
 	newRecommendation *mpaTypes.RecommendedResources,
 	newStatusCondition mpaTypes.MultidimPodAutoscalerCondition,
 	mpa *mpaTypes.MultidimPodAutoscaler) (bool, error) {
-	mpaCopy := mpa.DeepCopy()
-	if newRecommendation != nil {
-		mpaCopy.Status.RecommendationResources = newRecommendation.DeepCopy()
+	if newRecommendation == nil {
+		return false, fmt.Errorf("no aviliable recommendation to update the MPA(%s/%s)'s status", mpa.Namespace, mpa.Name)
 	}
+	mpaCopy := mpa.DeepCopy()
+	mpaCopy.Status.RecommendationResources = newRecommendation.DeepCopy()
 	mpaCopy.Status.Conditions = append(mpaCopy.Status.Conditions, newStatusCondition)
 
 	_, err :=
