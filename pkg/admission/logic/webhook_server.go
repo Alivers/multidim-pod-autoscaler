@@ -36,7 +36,7 @@ func NewAdmissionServer(
 func (as *AdmissionServer) admitting(
 	data []byte,
 ) (*v1beta1.AdmissionResponse, admissionUtil.AdmissionStatus, admissionUtil.AdmissionResource) {
-	response := &v1beta1.AdmissionResponse{}
+	response := v1beta1.AdmissionResponse{}
 	// 允许 admission request
 	response.Allowed = true
 
@@ -44,7 +44,7 @@ func (as *AdmissionServer) admitting(
 	admissionRequest := v1beta1.AdmissionReview{}
 	if err := json.Unmarshal(data, &admissionRequest); err != nil {
 		klog.Errorf("connot parse the admission request: %v", err)
-		return response, admissionUtil.Error, admissionUtil.Unknown
+		return &response, admissionUtil.Error, admissionUtil.Unknown
 	}
 
 	resource := admissionUtil.Unknown
@@ -68,7 +68,7 @@ func (as *AdmissionServer) admitting(
 
 	if err != nil {
 		klog.Errorf("errors occored while handling admission request: %v", err)
-		return response, admissionUtil.Error, resource
+		return &response, admissionUtil.Error, resource
 	}
 
 	status := admissionUtil.Skipped
@@ -79,12 +79,12 @@ func (as *AdmissionServer) admitting(
 		plainPatches, err := json.Marshal(patches)
 		if err != nil {
 			klog.Errorf("connot marshal the patches %v: %v", patches, err)
-			return response, admissionUtil.Error, resource
+			return &response, admissionUtil.Error, resource
 		}
 		patchType := v1beta1.PatchTypeJSONPatch
 		response.PatchType = &patchType
 		response.Patch = plainPatches
-		klog.V(4).Infof("patches ready to send: %v", patches)
+		klog.V(4).Infof("patches ready to send: %v", plainPatches)
 
 		status = admissionUtil.Applied
 	}
@@ -94,7 +94,7 @@ func (as *AdmissionServer) admitting(
 		admissionUtil.OnAppliedPod(status == admissionUtil.Applied)
 	}
 
-	return response, status, resource
+	return &response, status, resource
 }
 
 // Serve 完成一次webhook的回调执行流程

@@ -94,7 +94,7 @@ func getContainerPatch(
 	annotations = append(annotations, requestAnnotations...)
 	annotations = append(annotations, limitAnnotations...)
 
-	updateContainerAnnotation := fmt.Sprintf("container %d: ", containerIndex) + strings.Join(annotations, ", ")
+	updateContainerAnnotation := fmt.Sprintf("container-%d--", containerIndex) + strings.Join(annotations, ",")
 
 	return patches, annotations, updateContainerAnnotation
 }
