@@ -172,14 +172,17 @@ func (r *recommender) updateRecommendationIfBetter(
 	newRecommendation *mpaTypes.RecommendedResources,
 	newStatusCondition mpaTypes.MultidimPodAutoscalerCondition,
 	mpa *mpaTypes.MultidimPodAutoscaler) (bool, error) {
-	if newRecommendation == nil {
-		return false, fmt.Errorf("no aviliable recommendation to update the MPA(%s/%s)'s status", mpa.Namespace, mpa.Name)
-	}
+	var err error
+
 	mpaCopy := mpa.DeepCopy()
-	mpaCopy.Status.RecommendationResources = newRecommendation.DeepCopy()
+	if newRecommendation != nil {
+		mpaCopy.Status.RecommendationResources = newRecommendation.DeepCopy()
+	} else {
+		klog.Warningf("no aviliable recommendation to update the MPA(%s/%s)'s status", mpa.Namespace, mpa.Name)
+	}
 	mpaCopy.Status.Conditions = append(mpaCopy.Status.Conditions, newStatusCondition)
 
-	_, err :=
+	_, err =
 		r.mpaclientset.AutoscalingV1().MultidimPodAutoscalers(mpa.Namespace).Update(context.TODO(), mpaCopy, metav1.UpdateOptions{})
 	return true, err
 }
