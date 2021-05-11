@@ -109,16 +109,18 @@ func (c *calculator) Calculate(
 	var resourceFormat resource.Format
 
 	// 统计所有 pod副本的 qps
-	var serviceQps int64
+	var serviceQps float64
 	for _, pod := range controlledPod {
 		metricsInfo, exists := podsMetricsInfo[util.GetPodId(pod)]
 		if !exists {
 			klog.Infof("connot get the http_requests metrics of pod(%s/%s)", pod.Namespace, pod.Name)
 			continue
 		}
-		serviceQps += metricsInfo.Value.MilliValue()
+		serviceQps += float64(metricsInfo.Value.MilliValue())
 		resourceFormat = metricsInfo.Value.Format
 	}
+	// 将 1000m 为单元的转为 1.0 为单元的数值
+	serviceQps = serviceQps / 1000.0
 	// 请求的期望响应时间
 	expectResponseTime := defaultResponseTime
 	if mpaWithSelector.Mpa.Spec.ResourcePolicy != nil &&
@@ -144,7 +146,7 @@ func (c *calculator) Calculate(
 			reqs,
 			serviceQps,
 			float64(expectResponseTime),
-			float64(serviceQps)/float64(int64(podNum)*reqs),
+			serviceQps/float64(int64(podNum)*reqs),
 		)
 	}
 
@@ -165,7 +167,7 @@ func (c *calculator) Calculate(
 }
 
 // recommendResource 通过伸缩推荐算法计算资源方案
-func recommendResource(qps int64, expectRespTime int) (float64, int64, int64) {
+func recommendResource(qps float64, expectRespTime int) (float64, int64, int64) {
 	var curPodNum, curCpuQuantity int64
 	var curScore float64
 
@@ -173,7 +175,7 @@ func recommendResource(qps int64, expectRespTime int) (float64, int64, int64) {
 		waitTime := float64(expectRespTime) - 1.0/float64(reqs)
 		for podNum := podNumMin; podNum <= podNumMax; podNum += 1 {
 			// 服务强度 ρ
-			serviceIntensity := float64(qps) / float64(podNum*reqs) / 1000.0
+			serviceIntensity := qps / float64(podNum*reqs)
 
 			score := evaluatePolicy(cpu, podNum, reqs, qps, waitTime, serviceIntensity)
 			// 更新推荐方案
@@ -191,14 +193,14 @@ func recommendResource(qps int64, expectRespTime int) (float64, int64, int64) {
 }
 
 // evaluatePolicy 计算给定资源方案的得分
-func evaluatePolicy(res, podNum, reqs, qps int64, waitTime, serviceIntensity float64) float64 {
+func evaluatePolicy(res, podNum, reqs int64, qps float64, waitTime, serviceIntensity float64) float64 {
 	// 如果出现无限排队 跳过
 	if serviceIntensity >= 1.0 {
 		klog.V(2).Infof("policy(cpuQuantity=%dm,podNum=%d,qps=%d,req/s=%d) maybe lead to infinite queueing, skipped this policy", res, podNum, qps, reqs)
 		return 0.0
 	}
 
-	serviceScore := queueRequests(reqs, qps, podNum, waitTime, serviceIntensity)
+	serviceScore := queueRequests(reqs, podNum, qps, waitTime, serviceIntensity)
 	// 通过资源成本和违约成本计算方案得分
 	resCost := calculateResourceCost(res, podNum)
 	penaltyCost := calculatePenaltyCost(serviceScore)
@@ -232,9 +234,9 @@ func calculatePolicyScore(resourceCost, penaltyCost float64) float64 {
 }
 
 // queueRequests 通过 M/M/C 排队论模型，评估输入方案的服务可用性
-func queueRequests(reqs, qps, podNum int64, waitTime float64, serviceIntensity float64) float64 {
+func queueRequests(reqs, podNum int64, qps, waitTime float64, serviceIntensity float64) float64 {
 	// λ / μ
-	tmp := float64(qps) / float64(reqs)
+	tmp := qps / float64(reqs)
 	p0 := func() float64 {
 		sum := 0.0
 		for i := 0; i < int(podNum); i += 1 {
@@ -247,6 +249,6 @@ func queueRequests(reqs, qps, podNum int64, waitTime float64, serviceIntensity f
 	lengthQueue :=
 		math.Pow(float64(podNum)*serviceIntensity, float64(podNum)) * serviceIntensity / (factConst[podNum] * (1 - serviceIntensity) * (1 - serviceIntensity)) * p0
 
-	serviceScore := (1 - math.Exp(waitTime*float64(qps-podNum*reqs))) * (100 * lengthQueue)
+	serviceScore := (1 - math.Exp(waitTime*(qps-float64(podNum*reqs)))) * (100 * lengthQueue)
 	return serviceScore
 }
