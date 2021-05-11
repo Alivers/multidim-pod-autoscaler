@@ -84,7 +84,6 @@ func (as *AdmissionServer) admitting(
 		patchType := v1beta1.PatchTypeJSONPatch
 		response.PatchType = &patchType
 		response.Patch = plainPatches
-		klog.V(4).Infof("patches ready to send: %v", plainPatches)
 
 		status = admissionUtil.Applied
 	}

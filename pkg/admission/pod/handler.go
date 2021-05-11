@@ -57,7 +57,7 @@ func (ph *podHandler) GetPatches(ar *v1beta1.AdmissionRequest) ([]patchUtil.Patc
 		pod.Namespace = namespace
 	}
 
-	klog.V(4).Infof("Admitting Pod---%s", pod.String())
+	klog.V(4).Infof("Admitting Pod: name=%s,namespace=%s,generateName=%s", pod.Name, pod.Namespace, pod.GenerateName)
 
 	// 获取控制该pod的MPA 对象
 	controllingMpa := ph.mpaMatcher.GetPodMatchingMpa(&pod)
