@@ -104,7 +104,7 @@ func (c *calculator) Calculate(
 		return nil, UnknownRecommendation, fmt.Errorf("failed to get pods' qps: %v", err.Error())
 	}
 
-	klog.V(4).Infof("get qps metrics of pods: %v", podsMetricsInfo)
+	klog.V(2).Infof("get qps metrics of pods: %v", podsMetricsInfo)
 
 	var resourceFormat resource.Format
 
