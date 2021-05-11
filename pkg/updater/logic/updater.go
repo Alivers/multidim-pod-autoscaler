@@ -114,6 +114,7 @@ func (u *updater) MainProcedure(ctx context.Context) {
 	}
 	if len(mpas) <= 0 {
 		klog.Warningf("no MPA Obejects to process the update")
+		return
 	}
 
 	executionTimer.ObserveStep("GetMPAs")
