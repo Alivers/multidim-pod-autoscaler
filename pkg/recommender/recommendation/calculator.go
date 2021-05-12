@@ -196,7 +196,7 @@ func recommendResource(qps float64, expectRespTime int) (float64, int64, int64) 
 func evaluatePolicy(res, podNum, reqs int64, qps float64, waitTime, serviceIntensity float64) float64 {
 	// 如果出现无限排队 跳过
 	if serviceIntensity >= 1.0 {
-		klog.V(2).Infof("policy(cpuQuantity=%dm,podNum=%d,qps=%d,req/s=%d) maybe lead to infinite queueing, skipped this policy", res, podNum, qps, reqs)
+		klog.V(2).Infof("policy(cpuQuantity=%dm,podNum=%d,qps=%gm,req/s=%d) maybe lead to infinite queueing, skipped this policy", res, podNum, qps, reqs)
 		return 0.0
 	}
 
@@ -206,7 +206,7 @@ func evaluatePolicy(res, podNum, reqs int64, qps float64, waitTime, serviceInten
 	penaltyCost := calculatePenaltyCost(serviceScore)
 	score := calculatePolicyScore(resCost, penaltyCost)
 
-	klog.V(4).Infof("policy (cpuQuantity=%dm,podNum-%d,req/s=%d,qps=%dm,serviceIntensity=%g,waitTime=%g) with score(serviceScore=%g,resourceCost=%g,penaltyCost=%g,finalScore=%g)", res, podNum, reqs, qps, serviceIntensity, waitTime, serviceScore, resCost, penaltyCost, score)
+	klog.V(4).Infof("policy (cpuQuantity=%dm,podNum=%d,req/s=%d,qps=%gm,serviceIntensity=%g,waitTime=%gms) with score(serviceScore=%g,resourceCost=%g,penaltyCost=%g,finalScore=%g)", res, podNum, reqs, qps, serviceIntensity, waitTime, serviceScore, resCost, penaltyCost, score)
 
 	return score
 }
@@ -249,6 +249,6 @@ func queueRequests(reqs, podNum int64, qps, waitTime float64, serviceIntensity f
 	lengthQueue :=
 		math.Pow(float64(podNum)*serviceIntensity, float64(podNum)) * serviceIntensity / (factConst[podNum] * (1 - serviceIntensity) * (1 - serviceIntensity)) * p0
 
-	serviceScore := (1 - math.Exp(waitTime*(qps-float64(podNum*reqs)))) * (100 * lengthQueue)
+	serviceScore := (1 - math.Exp((waitTime/1000.0)*(qps-float64(podNum*reqs)))) * (100 * lengthQueue)
 	return serviceScore
 }
