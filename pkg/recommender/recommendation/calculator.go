@@ -26,9 +26,9 @@ var (
 		2250: 65,
 	}
 	servicePenaltyCostMap = map[float64]float64{
-		0.9:  1.0 - 1.0*0,
-		0.85: 1.0 - 1.0*0.2,
-		0.8:  1.0 - 1.0*0.5,
+		90.0: 1.0 - 1.0*0,
+		85.0: 1.0 - 1.0*0.2,
+		80.0: 1.0 - 1.0*0.5,
 		0.0:  1.0 - 1.0*1.0,
 	}
 	// fractional constant
@@ -187,7 +187,7 @@ func recommendResource(qps float64, expectRespTime int) (float64, int64, int64) 
 		}
 	}
 
-	klog.V(4).Infof("final policy(score=%d): instance number=%d, instance resources=%dm", curScore, curPodNum, curCpuQuantity)
+	klog.V(4).Infof("final policy(score=%g): instance number=%d, instance resources=%dm", curScore, curPodNum, curCpuQuantity)
 
 	return curScore, curPodNum, curCpuQuantity
 }
@@ -196,7 +196,7 @@ func recommendResource(qps float64, expectRespTime int) (float64, int64, int64) 
 func evaluatePolicy(res, podNum, reqs int64, qps float64, waitTime, serviceIntensity float64) float64 {
 	// 如果出现无限排队 跳过
 	if serviceIntensity >= 1.0 {
-		klog.V(2).Infof("policy(cpuQuantity=%dm,podNum=%d,qps=%gm,req/s=%d) maybe lead to infinite queueing, skipped this policy", res, podNum, qps, reqs)
+		klog.V(2).Infof("policy(cpuQuantity=%dm,podNum=%d,qps=%g,req/s=%d) maybe lead to infinite queueing, skipped this policy", res, podNum, qps, reqs)
 		return 0.0
 	}
 
@@ -206,7 +206,7 @@ func evaluatePolicy(res, podNum, reqs int64, qps float64, waitTime, serviceInten
 	penaltyCost := calculatePenaltyCost(serviceScore)
 	score := calculatePolicyScore(resCost, penaltyCost)
 
-	klog.V(4).Infof("policy (cpuQuantity=%dm,podNum=%d,req/s=%d,qps=%gm,serviceIntensity=%g,waitTime=%gms) with score(serviceScore=%g,resourceCost=%g,penaltyCost=%g,finalScore=%g)", res, podNum, reqs, qps, serviceIntensity, waitTime, serviceScore, resCost, penaltyCost, score)
+	klog.V(4).Infof("policy (cpuQuantity=%dm,podNum=%d,req/s=%d,qps=%g,serviceIntensity=%g,waitTime=%gms) with score(serviceScore=%g,resourceCost=%g,penaltyCost=%g,finalScore=%g)", res, podNum, reqs, qps, serviceIntensity, waitTime, serviceScore, resCost, penaltyCost, score)
 
 	return score
 }
