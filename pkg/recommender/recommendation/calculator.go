@@ -26,10 +26,10 @@ var (
 		2250: 65,
 	}
 	servicePenaltyCostMap = map[float64]float64{
-		90.0: 1.0 - 1.0*0,
-		85.0: 1.0 - 1.0*0.2,
-		80.0: 1.0 - 1.0*0.5,
-		0.0:  1.0 - 1.0*1.0,
+		90.0: 1.0,
+		85.0: 0.8,
+		80.0: 0.5,
+		0.0:  0.0,
 	}
 	// fractional constant
 	factConst = []float64{1,
