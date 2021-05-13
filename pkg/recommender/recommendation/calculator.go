@@ -66,7 +66,7 @@ const (
 	resourceCostMax = float64(podNumMax*2250) * cpuPrice
 	resourceCostMin = float64(podNumMin*250) * cpuPrice
 	// 推荐方案更新的阈值
-	recommendationBetterThresold = 0.02
+	recommendationBetterThresold = 0.04
 )
 
 type RecommendationAction string
