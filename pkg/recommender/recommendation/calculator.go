@@ -208,7 +208,7 @@ func evaluatePolicy(res, podNum, reqs int64, qps float64, waitTime, serviceInten
 	penaltyCost := calculatePenaltyCost(serviceScore)
 	score := calculatePolicyScore(resCost, penaltyCost)
 
-	klog.V(4).Infof("policy (cpuQuantity=%dm,podNum=%d,req/s=%d,qps=%g,serviceIntensity=%g,waitTime=%gms) with score(serviceScore=%g,resourceCost=%g,penaltyCost=%g,finalScore=%g)", res, podNum, reqs, qps, serviceIntensity, waitTime, serviceScore, resCost, penaltyCost, score)
+	klog.V(4).Infof("policy(cpuQuantity=%dm,podNum=%d,req/s=%d,qps=%g,serviceIntensity=%g) with score(serviceScore=%g,resourceCost=%g,penaltyCost=%g,finalScore=%g)", res, podNum, reqs, qps, serviceIntensity, serviceScore, resCost, penaltyCost, score)
 
 	return score
 }
