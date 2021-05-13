@@ -15,20 +15,22 @@ import (
 
 var (
 	cpuRequestMap = map[int64]int64{
-		250:  10,
-		500:  18,
-		750:  27,
-		1000: 37,
-		1250: 42,
-		1500: 59,
-		1750: 61,
-		2000: 63,
-		2250: 65,
+		250:  6,
+		500:  12,
+		750:  20,
+		1000: 26,
+		1250: 34,
+		1500: 40,
+		1750: 46,
+		2000: 52,
+		2250: 60,
 	}
 	servicePenaltyCostMap = map[float64]float64{
-		90.0: 1.0,
+		95.0: 1.0,
+		90.0: 0.9,
 		85.0: 0.8,
 		80.0: 0.5,
+		60.0: 0.3,
 		0.0:  0.0,
 	}
 	// fractional constant
@@ -64,7 +66,7 @@ const (
 	resourceCostMax = float64(podNumMax*2250) * cpuPrice
 	resourceCostMin = float64(podNumMin*250) * cpuPrice
 	// 推荐方案更新的阈值
-	recommendationBetterThresold = 0.1
+	recommendationBetterThresold = 0.02
 )
 
 type RecommendationAction string
