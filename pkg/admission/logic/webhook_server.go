@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/api/admission/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog"
 	"multidim-pod-autoscaler/pkg/admission/pod"
 	admissionUtil "multidim-pod-autoscaler/pkg/admission/util"
 	mpaApi "multidim-pod-autoscaler/pkg/util/mpa"
 	patchUtil "multidim-pod-autoscaler/pkg/util/patch"
 	"net/http"
+
+	"k8s.io/api/admission/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog"
 )
 
 type AdmissionServer struct {
@@ -74,13 +75,13 @@ func (as *AdmissionServer) admitting(
 	status := admissionUtil.Skipped
 
 	if len(patches) > 0 {
-		klog.V(4).Infof("admission get pods' patches: %v", patches)
 		// 序列化patches为 字节流数据
 		plainPatches, err := json.Marshal(patches)
 		if err != nil {
 			klog.Errorf("connot marshal the patches %v: %v", patches, err)
 			return &response, admissionUtil.Error, resource
 		}
+		klog.V(4).Infof("admission get pods' patches: %v", string(plainPatches))
 		patchType := v1beta1.PatchTypeJSONPatch
 		response.PatchType = &patchType
 		response.Patch = plainPatches
