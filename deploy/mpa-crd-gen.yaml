@@ -13,7 +13,7 @@ spec:
     listKind: MultidimPodAutoscalerList
     plural: multidimpodautoscalers
     shortNames:
-    - vpa
+    - mpa
     singular: multidimpodautoscaler
   scope: Namespaced
   versions:

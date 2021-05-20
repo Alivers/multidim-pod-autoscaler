@@ -21,7 +21,7 @@ type MultidimPodAutoscalerList struct {
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:resource:shortName=vpa
+// +kubebuilder:resource:shortName=mpa
 
 // MultidimPodAutoscaler 保存伸缩器的基本信息 用于自动伸缩
 type MultidimPodAutoscaler struct {

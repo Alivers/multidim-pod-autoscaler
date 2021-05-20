@@ -6,4 +6,4 @@ set -o pipefail
 
 SCRIPT_ROOT=$(dirname ${BASH_SOURCE})/..
 
-"$SCRIPT_ROOT"/hack/vpa-process-yamls.sh apply "$@"
+"$SCRIPT_ROOT"/hack/mpa-process-yamls.sh apply "$@"
