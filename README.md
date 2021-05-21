@@ -35,3 +35,15 @@ multidim-pod-autoscaler
 ├── hack         # 部署、环境等相关的脚本
 └── pkg          # 源码
 ```
+
+## 组件及其他说明
+
+整个 MPA 由 Recommender、Updater、Admission 三个组件构成，三个组件独立部署，独立运行，之前的纽带为 某一时刻处于某一状态的MPA对象。
+
+docker 镜像： https://hub.docker.com/u/aliverjon
+
+```bash
+# 每个组件修改完代码之后需要重新build、push镜像
+# 如 Admission
+make docker-push -C ./pkg/admission/
+```
