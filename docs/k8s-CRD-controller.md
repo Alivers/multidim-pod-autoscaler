@@ -1,4 +1,14 @@
-# kubernetes CRD 控制器开发(自动伸缩控制器) 
+# kubernetes CRD 控制器开发(自动伸缩控制器)
+
+## 样例
+
+CRD控制器开发样例：https://blog.csdn.net/boling_cavalry/article/details/88917818，步骤：
+
+1. 定义 CRD 资源 yaml (这里可以不用管 字段校验)
+2. 编写 CRD 资源的 具体结构 types
+3. 使用 code-generator ，根据  types 生成 该CRD控制器的 client客户端，通过client与 API-server通信来实际访问CRD资源
+
+## 开发相关
 
 #### 1. Labels
 
@@ -120,6 +130,10 @@ spec:
 
 ![image-20210521214924537](k8s-CRD-controller.assets/image-20210521214924537.png)
 
+- indexer 对 local store 做了索引，可以通过indexer 根据 指定 key 获取需要的资源值
+- lister基于 indexer，提供了获取一系列相同类型资源的接口
+- reflector启动后，通过 lister、watcher获取资源数据存入 delta FIFO
+
 > indexer: [深入浅出indexer](https://blog.csdn.net/weixin_42663840/article/details/81530606?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522161839629716780274184216%2522%252C%2522scm%2522%253A%252220140713.130102334.pc%255Fblog.%2522%257D&request_id=161839629716780274184216&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~blog~first_rank_v2~rank_v29-1-81530606.nonecase&utm_term=%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BAkubernetes%E4%B9%8Bclient-go)
 >
 > SharedInformer: [深入浅出SharedInformer](https://blog.csdn.net/weixin_42663840/article/details/81699303?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522161839629716780274184216%2522%252C%2522scm%2522%253A%252220140713.130102334.pc%255Fblog.%2522%257D&request_id=161839629716780274184216&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~blog~first_rank_v2~rank_v29-4-81699303.nonecase&utm_term=%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BAkubernetes%E4%B9%8Bclient-go)
@@ -138,7 +152,7 @@ REST Mapper(local store中的资源mapper)获取：
 discoveryClient := discovery.NewDiscoveryClientForConfigOrDie(config)
 cachedDiscoveryClient := cachedDiscovery.NewMemCacheClient(discoveryClient)
 restMapper := restmapper.NewDeferredDiscoveryRESTMapper(cachedDiscoveryClient)
-
+// 每分钟重置一次缓存，即重新获取一次restmapper
 go wait.Until(func() {
   restMapper.Reset()
 }, 1 * time.Minite(), make(chan struct{}))
@@ -211,6 +225,20 @@ namespace中的资源分配的约束策略(to pods and containers)
 > 驱逐策略：https://kubernetes.io/zh/docs/concepts/scheduling-eviction/eviction-policy/
 >
 > 驱逐宽限期：https://kubernetes.io/zh/docs/tasks/administer-cluster/out-of-resource/
+
+##### 6.3. 获取管理pod的controller(副本管理器)
+
+每个pod对象，都有 ownerReference 列表，通过判断每个 owner 的属性，是否是controller来决定；获取到controller之后，即可获取该副本中所有pod的状态：running、pending、删除时间等
+
+```go
+for _, owerRef := range pod.OwnerReferences {
+		if *owerRef.Controller {
+			managingController = owerRef
+		}
+	}
+```
+
+
 
 ## Prometheus
 
