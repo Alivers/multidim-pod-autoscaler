@@ -1,0 +1,70 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: test-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: "apps/v1"
+    kind: Deployment
+    name: hpa-test-app
+  minReplicas: 1
+  maxReplicas: 16
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 90
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hpa-test-app
+  labels:
+    app: hpa-test-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hpa-test-app
+  template:
+    metadata:
+      labels:
+        app: hpa-test-app
+    spec:
+      containers:
+        - image: aliverjon/hpa-cpu-bound-amd64:latest
+          imagePullPolicy: IfNotPresent
+          name: metrics-provider
+          ports:
+            - name: metrics
+              containerPort: 8081
+            - name: compute
+              containerPort: 8082
+          resources:
+            requests:
+              cpu: 250m
+            limits:
+              cpu: 250m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: hpa-test-app
+  name: hpa-test-app
+spec:
+  ports:
+    - name: metrics
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    - name: compute
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+  selector:
+    app: hpa-test-app
+  type: ClusterIP

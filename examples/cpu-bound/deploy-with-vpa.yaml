@@ -1,0 +1,66 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: test-vpa
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: Deployment
+    name: vpa-test-app
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        minAllowed:
+          cpu: 250m
+        maxAllowed:
+          cpu: 2250m
+        controlledResources: ["cpu"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpa-test-app
+  labels:
+    app: vpa-test-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: vpa-test-app
+  template:
+    metadata:
+      labels:
+        app: vpa-test-app
+    spec:
+      containers:
+        - image: aliverjon/vpa-cpu-bound-amd64:latest
+          imagePullPolicy: IfNotPresent
+          name: metrics-provider
+          ports:
+            - name: metrics
+              containerPort: 8081
+            - name: compute
+              containerPort: 8082
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: vpa-test-app
+  name: vpa-test-app
+spec:
+  ports:
+    - name: metrics
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    - name: compute
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+  selector:
+    app: vpa-test-app
+  type: ClusterIP

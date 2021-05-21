@@ -16,7 +16,7 @@ metadata:
   labels:
     app: mpa-test-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: mpa-test-app
