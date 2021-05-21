@@ -35,7 +35,7 @@ spec:
         app: hpa-test-app
     spec:
       containers:
-        - image: aliverjon/hpa-cpu-bound-amd64:latest
+        - image: aliverjon/cpu-bound-amd64:latest
           imagePullPolicy: IfNotPresent
           name: metrics-provider
           ports:
