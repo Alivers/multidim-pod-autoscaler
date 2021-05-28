@@ -196,13 +196,13 @@ fi
 if [ -f $outfile ]; then
     echo '本次测试结果如下：'
     echo '+------+----------+----------+---------------+---------------+---------------+--------------------+--------------------+'
-    echo '| 序号 | 总请求数 |  并发数  |   失败请求数  |  每秒请求数   | 平均事务(ms)  | 并发平均事务数(ms) |   总体传输字节数   |'
+    echo '| 序号 | 总请求数 |  并发数  |   失败请求数  |  每秒请求数   |请求平均时间ms | 并发请求平均时间ms |   总体传输字节数   |'
     echo '+------+----------+----------+---------------+---------------+---------------+--------------------+--------------------+'
     comp=($(awk '/Complete requests/{print $NF}' $outfile))
     concur=($(awk '/Concurrency Level:/{print $NF}' $outfile))
     fail=($(awk '/Failed requests/{print $NF}' $outfile))
     qps=($(awk '/Requests per second/{print $4F}' $outfile))
-    tpr=($(awk '/^Time per request:(.*)(mean)$/{print $4F}' $outfile))
+    tpr=($(awk '/Time per request:(.*)(mean)/{print $4F}' $outfile))
     tpr_c=($(awk '/Time per request(.*)(mean, across all concurrent requests)/{print $4F}' $outfile))
     trate=($(awk '/Transfer rate/{print $3F}' $outfile))
     for ((i = 0; i < ${#comp[@]}; i++)); do
@@ -225,7 +225,7 @@ if [ -f $outfile ]; then
         printf '%20s' ${trate[i]}
         printf '|'
         echo ''
-        echo '+-----+----------+----------+---------------+---------------+---------------+--------------------+--------------------+'
+        echo '+------+----------+----------+---------------+---------------+---------------+--------------------+--------------------+'
     done
     echo ''
 fi
