@@ -183,8 +183,10 @@ if [ $flag != 0 ]; then
             cur=$max
             over=1
         fi
-        echo "等待 $sleeptime 秒"
-        sleep $sleeptime
+        if [ $over != 1 ]; then
+            echo "等待 $sleeptime 秒"
+            sleep $sleeptime
+        fi
     done
 else
     cmd="$cmd -c$clients $url"
@@ -194,7 +196,7 @@ fi
 if [ -f $outfile ]; then
     echo '本次测试结果如下：'
     echo '+------+----------+----------+---------------+---------------+---------------+--------------------+--------------------+'
-    echo '| 序号 | 总请求数 |  并发数  |   失败请求数   |   每秒请求数   | 平均事务(ms)  | 并发平均事务数(ms) |   总体传输字节数   |'
+    echo '| 序号 | 总请求数 |  并发数  |   失败请求数   |   每秒请求数   | 平均事务(ms)  | 并发平均事务数(ms) |  总体传输字节数  |'
     echo '+------+----------+----------+---------------+---------------+---------------+--------------------+--------------------+'
     comp=($(awk '/Complete requests/{print $NF}' $outfile))
     concur=($(awk '/Concurrency Level:/{print $NF}' $outfile))
