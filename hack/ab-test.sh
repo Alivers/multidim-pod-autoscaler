@@ -45,7 +45,7 @@ runtime=0
 # 传输数据
 postfile=''
 ARGS=$(getopt -a -o N:C:R:S:I:X:J:U:T:P:h -l count:,client:,round:,sleeptime:,min:,max:,step:,runtime:,postfile:,help -- "$@")
-[ $? -ne 0 || $# -eq 0 ] && usage
+[[ $? -ne 0 || $# -eq 0 ]] && usage
 eval set -- "${ARGS}"
 while true; do
     case "$1" in
