@@ -202,7 +202,7 @@ if [ -f $outfile ]; then
     concur=($(awk '/Concurrency Level:/{print $NF}' $outfile))
     fail=($(awk '/Failed requests/{print $NF}' $outfile))
     qps=($(awk '/Requests per second/{print $4F}' $outfile))
-    tpr=($(awk '/Time per request:(.*)(mean)/{print $4F}' $outfile))
+    tpr=($(awk '/Time per request:(.*)\(mean\)/{print $4F}' $outfile))
     tpr_c=($(awk '/Time per request(.*)(mean, across all concurrent requests)/{print $4F}' $outfile))
     trate=($(awk '/Transfer rate/{print $3F}' $outfile))
     for ((i = 0; i < ${#comp[@]}; i++)); do
