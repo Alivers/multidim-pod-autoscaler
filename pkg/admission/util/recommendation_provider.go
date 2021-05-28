@@ -2,12 +2,13 @@ package util
 
 import (
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/klog"
 	mpaTypes "multidim-pod-autoscaler/pkg/apis/autoscaling/v1"
 	containerUtil "multidim-pod-autoscaler/pkg/util/container"
 	"multidim-pod-autoscaler/pkg/util/limitrange"
 	recommendationUtil "multidim-pod-autoscaler/pkg/util/recommendation"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/klog"
 )
 
 // RecommendationProvider 获取指定 pod 的容器资源
@@ -100,7 +101,7 @@ func getContainersResources(
 			container.Resources.Limits, container.Resources.Requests,
 			resources[i].Requests, defaultLimit)
 
-		if recommLimit != nil {
+		if recommLimit != nil && len(recommLimit) != 0 {
 			// 设置伸缩后的limit
 			resources[i].Limits = recommLimit
 			if len(anotation) > 0 {
