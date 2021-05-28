@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - image: aliverjon/cpu-bound-amd64:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           name: metrics-provider
           ports:
             - name: metrics
