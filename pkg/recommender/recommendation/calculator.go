@@ -2,15 +2,16 @@ package recommendation
 
 import (
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/klog"
 	"math"
 	mpaTypes "multidim-pod-autoscaler/pkg/apis/autoscaling/v1"
 	"multidim-pod-autoscaler/pkg/recommender/metrics"
 	"multidim-pod-autoscaler/pkg/recommender/util"
 	utilMpa "multidim-pod-autoscaler/pkg/util/mpa"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/klog"
 )
 
 var (
@@ -60,13 +61,13 @@ const (
 	// recommenderInterval 两次推荐的间隔时间
 	recommenderInterval = int64(1 * 60 * 1000)
 	// 资源成本与违约成本分别的占比
-	resourceCostRatio = 0.5
+	resourceCostRatio = 0.6
 	penaltyCostRatio  = 1.0 - resourceCostRatio
 	// 资源成本的最值
 	resourceCostMax = float64(podNumMax*2250) * cpuPrice
 	resourceCostMin = float64(podNumMin*250) * cpuPrice
 	// 推荐方案更新的阈值
-	recommendationBetterThresold = 0.04
+	recommendationBetterThresold = 0.1
 )
 
 type RecommendationAction string
@@ -142,14 +143,18 @@ func (c *calculator) Calculate(
 		}
 		podNum := mpaWithSelector.Mpa.Status.RecommendationResources.TargetPodNum
 		reqs := cpuRequestMap[cpuQuantity.MilliValue()]
-		oldScore = evaluatePolicy(
-			cpuQuantity.MilliValue(),
-			int64(podNum),
-			reqs,
-			serviceQps,
-			float64(expectResponseTime),
-			serviceQps/float64(int64(podNum)*reqs),
-		)
+		if cpuQuantity.MilliValue() == targetPodResource && podNum == int(targetPodNum) {
+			oldScore = score
+		} else {
+			oldScore = evaluatePolicy(
+				cpuQuantity.MilliValue(),
+				int64(podNum),
+				reqs,
+				serviceQps,
+				float64(expectResponseTime),
+				serviceQps/float64(int64(podNum)*reqs),
+			)
+		}
 	}
 
 	// 如果旧方案得分为零(无方案) 或 当前方案得分超出旧方案得分 threshold 则进行更新
@@ -208,7 +213,9 @@ func evaluatePolicy(res, podNum, reqs int64, qps float64, waitTime, serviceInten
 	penaltyCost := calculatePenaltyCost(serviceScore)
 	score := calculatePolicyScore(resCost, penaltyCost)
 
-	klog.V(4).Infof("policy(cpuQuantity=%dm,podNum=%d,req/s=%d,qps=%g,serviceIntensity=%g) with score(serviceScore=%g,resourceCost=%g,penaltyCost=%g,finalScore=%g)", res, podNum, reqs, qps, serviceIntensity, serviceScore, resCost, penaltyCost, score)
+	if qps > 0.0 {
+		klog.V(4).Infof("policy(cpuQuantity=%dm,podNum=%d,req/s=%d,qps=%g,serviceIntensity=%g) with score(serviceScore=%g,resourceCost=%g,penaltyCost=%g,finalScore=%g)", res, podNum, reqs, qps, serviceIntensity, serviceScore, resCost, penaltyCost, score)
+	}
 
 	return score
 }
