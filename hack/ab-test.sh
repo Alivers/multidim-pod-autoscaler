@@ -183,6 +183,8 @@ if [ $flag != 0 ]; then
             cur=$max
             over=1
         fi
+        echo "等待 $sleeptime 秒"
+        sleep $sleeptime
     done
 else
     cmd="$cmd -c$clients $url"
